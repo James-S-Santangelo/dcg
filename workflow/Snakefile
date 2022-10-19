@@ -1,3 +1,4 @@
+import os
 import glob
 from snakemake.utils import min_version
 
@@ -7,17 +8,22 @@ configfile: '../config/hpcnode.yaml'
 
 # Haplotype names. Used for finding haplotype fasta
 HAPS = ['occ1', 'occ2', 'pall1', 'pall2']
+
+# Input files
 HAPLOTYPE_FASTA_DIR = config['haplotype_fastas']
+HCN_LOCI_FASTA = config['hcn_loci_fasta']
 
 # Paths for output files
 LOG_DIR = config['log_prefix']
 REF_DIR = f"{config['results_prefix']}/ref"
+HCN_LOCI_DIR = f"{config['results_prefix']}/hcn_loci"
 
 include: 'rules/common.smk'
 
 rule all:
     input:
-        f'{REF_DIR}/ref.done'
+        f'{REF_DIR}/ref.done',
+        f'{HCN_LOCI_DIR}/hcn_loci.done'
 
 include: 'rules/ref.smk'
 include: 'rules/hcn_loci.smk'
