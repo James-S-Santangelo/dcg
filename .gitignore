@@ -1,0 +1,4 @@
+*.fasta
+.snakemake/
+logs/
+results/

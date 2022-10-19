@@ -1,0 +1,6 @@
+# Input files
+haplotype_fastas: ../resources/haplotype_fastas
+
+# Output
+results_prefix: /scratch/projects/trifolium/dovetail/results
+log_prefix: /scratch/projects/trifolium/dovetail/logs
