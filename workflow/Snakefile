@@ -17,14 +17,18 @@ HCN_LOCI_FASTA = config['hcn_loci_fasta']
 LOG_DIR = config['log_prefix']
 REF_DIR = f"{config['results_prefix']}/ref"
 HCN_LOCI_DIR = f"{config['results_prefix']}/hcn_loci"
+SYNTENY_DIR = f"{config['results_prefix']}/synteny"
 
 include: 'rules/common.smk'
 
 rule all:
     input:
         f'{REF_DIR}/ref.done',
-        f'{HCN_LOCI_DIR}/hcn_loci.done'
+        f'{HCN_LOCI_DIR}/hcn_loci.done',
+        f'{SYNTENY_DIR}/synteny.done',
+
 
 include: 'rules/ref.smk'
 include: 'rules/hcn_loci.smk'
+include: 'rules/synteny.smk'
 
