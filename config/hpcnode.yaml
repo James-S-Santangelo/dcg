@@ -1,6 +1,7 @@
 # Input files
 haplotype_fastas: ../resources/haplotype_fastas
-hcn_loci_fasta: ../resources/hcn_loci/T-repens_HCN_genes.fasta
+hcn_loci_fasta: ../resources/hcn_loci/T-repens_HCN_genes.fastai
+genmap_files: /scratch/projects/trifolium/gwsd/toronto_gwsd/resources/genMap
 
 # Output
 results_prefix: /scratch/projects/trifolium/dovetail/results

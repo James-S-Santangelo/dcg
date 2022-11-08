@@ -2,3 +2,6 @@
 .snakemake/
 logs/
 results/
+circos/
+notebooks/
+*_fastas/

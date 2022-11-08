@@ -12,12 +12,14 @@ HAPS = ['occ1', 'occ2', 'pall1', 'pall2']
 # Input files
 HAPLOTYPE_FASTA_DIR = config['haplotype_fastas']
 HCN_LOCI_FASTA = config['hcn_loci_fasta']
+GENMAP_RESOURCE_DIR = config['genmap_files']
 
 # Paths for output files
 LOG_DIR = config['log_prefix']
 REF_DIR = f"{config['results_prefix']}/ref"
 HCN_LOCI_DIR = f"{config['results_prefix']}/hcn_loci"
 SYNTENY_DIR = f"{config['results_prefix']}/synteny"
+GENMAP_RESULTS_DIR = f"{config['results_prefix']}/gen_map"
 
 include: 'rules/common.smk'
 
@@ -26,9 +28,11 @@ rule all:
         f'{REF_DIR}/ref.done',
         f'{HCN_LOCI_DIR}/hcn_loci.done',
         f'{SYNTENY_DIR}/synteny.done',
+        f"{GENMAP_RESULTS_DIR}/gen_map.done"
 
 
 include: 'rules/ref.smk'
 include: 'rules/hcn_loci.smk'
 include: 'rules/synteny.smk'
+include: 'rules/recombination_map.smk'
 
