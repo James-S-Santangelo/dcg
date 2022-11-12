@@ -1,0 +1,9 @@
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - repeatmodeler=2.0.3
+  - ltr_retriever=2.9.0
+  - repeatmasker=4.1.2.p1
+  - genometools-genometools=1.6.2
+  - perl-file-which=1.23
