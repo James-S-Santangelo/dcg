@@ -4,41 +4,6 @@
 #### REPEAT MODELING AND MASKING ####
 #####################################
 
-rule build_repeat_modeler_db:
-    input:
-        get_haplotype_fasta
-    output:
-        multiext(f"{ANNOTATION_DIR}/repeat_modeler/{{hap}}_rmdb", '.nhr', '.nin', '.nnd', '.nni', '.nog', '.nsq', '.translation')
-    conda: '../envs/annotation.yaml'
-    #container: 'docker://dfam/tetools:1.6'
-    log: LOG_DIR + '/build_repeat_modeler_db/{hap}_rmdb.log'
-    params:
-        out = f"{ANNOTATION_DIR}/repeat_modeler/{{hap}}_rmdb"
-    shell:
-        """
-        BuildDatabase -name {params.out} {input} 2> {log}
-        """
-
-rule repeat_modeler:
-    input:
-        rules.build_repeat_modeler_db.output
-    output:
-        fasta = f"{ANNOTATION_DIR}/repeat_modeler/{{hap}}_rmdb-families.fa",
-        stk = f"{ANNOTATION_DIR}/repeat_modeler/{{hap}}_rmdb-families.stk"
-    threads: 32
-    conda: '../envs/annotation.yaml'
-    #container: 'docker://dfam/tetools:1.6'
-    log: LOG_DIR + '/repeat_modeler/{hap}_rm.log'
-    params:
-        db_base = lambda wildcards, input: os.path.splitext(input[0])[0]
-    shell:
-        """
-        RepeatModeler -database {params.db_base} \
-            -pa {threads} \
-            -recoverDir ./{wildcards.hap} \
-            -LTRStruct &> {log}
-        """
-
 rule configure_repbase:
     input:
         REPBASE
@@ -56,6 +21,40 @@ rule configure_repbase:
         cp -r /opt/RepeatMasker/Libraries/* {output.libdir} &&
         ln -sf {output.dfam} {output.rm} &&
         addRepBase.pl --libdir {output.libdir} ) &> {log}
+        """
+
+rule build_repeat_modeler_db:
+    input:
+        get_haplotype_fasta
+    output:
+        multiext(f"{ANNOTATION_DIR}/repeat_modeler/{{hap}}_rmdb", '.nhr', '.nin', '.nnd', '.nni', '.nog', '.nsq', '.translation')
+    container: 'docker://dfam/tetools:1.6'
+    log: LOG_DIR + '/build_repeat_modeler_db/{hap}_rmdb.log'
+    params:
+        out = f"{ANNOTATION_DIR}/repeat_modeler/{{hap}}_rmdb"
+    shell:
+        """
+        BuildDatabase -name {params.out} {input} 2> {log}
+        """
+
+rule repeat_modeler:
+    input:
+        rules.build_repeat_modeler_db.output,
+        rules.configure_repbase.output
+    output:
+        fasta = f"{ANNOTATION_DIR}/repeat_modeler/{{hap}}_rmdb-families.fa",
+        stk = f"{ANNOTATION_DIR}/repeat_modeler/{{hap}}_rmdb-families.stk"
+    threads: 32
+    container: 'docker://dfam/tetools:1.6'
+    log: LOG_DIR + '/repeat_modeler/{hap}_rm.log'
+    params:
+        db_base = lambda wildcards, input: os.path.splitext(input[0])[0]
+    shell:
+        """
+        RepeatModeler -database {params.db_base} \
+            -pa {threads} \
+            -recoverDir ./{wildcards.hap} \
+            -LTRStruct &> {log}
         """
 
 rule merge_repeat_databases:
