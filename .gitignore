@@ -5,3 +5,6 @@ results/
 circos/
 notebooks/
 *_fastas/
+RM_*
+*Cache*
+resources/RepBaseRepeatMaskerEdition-20181026.tar.gz
