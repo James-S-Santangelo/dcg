@@ -10,7 +10,7 @@ rule prothint_run:
 		masked_genome = f"{ANNOTATION}/repeat_masker/{{hap}}/{{hap}}_softMasked.fasta"
 	log: LOG + '/prothint/prot_log/prothint_run.log'
 	params:
-		f"{ANNOTATION}/prothint"
+		outputdir = f"{ANNOTATION}/prothint"
 	conda:'../env/prothint.yaml'
 	shell:
 	"""
@@ -32,11 +32,11 @@ rule prothint_done:
 
 rule braker2_run:
 	output:
-		braker_gtf = f"{ANNOTATION}/braker/braker_dcg/braker.gtf"
+		braker_gtf = f"{ANNOTATION}/braker/braker_dcg/braker.gtf",
 		hintsfile = f"{ANNOTATION}/braker/braker_dcg/hintsfile.gff"
 	input:
-		PROT = {rule.prothint_run.output.gff_prot_ready}
-		masked_genome = f"{ANNOTATION}/repeat_masker/{{hap}}/{{hap}}_softMasked.fasta"
+		PROT = {rule.prothint_run.output.gff_prot_ready},
+		masked_genome = f"{ANNOTATION}/repeat_masker/{{hap}}/{{hap}}_softMasked.fasta",
 		Star_Bam = f"{ANNOTATION_DIR}/star/star_align/Aligned.sortByCoord.out.bam"
 	log: LOG + '/braker/braker_log/braker_annotate.log'
 	params:
