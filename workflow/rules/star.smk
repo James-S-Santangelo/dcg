@@ -14,18 +14,18 @@ rule build_star:
 		WC_GENOME = f"{ANNOTATION_DIR}/star/star_build/Genome"
 		
 	input:
-		#Masked Genome, output from RepeatMasker goes here
-		masked_genome = f"{ANNOTATION_DIR}/
+		masked_genome = f"{ANNOTATION_DIR}/repeat_masker/{{hap}}/{{hap}}_softMasked.fast"
 	log: LOG_DIR + '/star/star_log/build.log'
 	conda:'../envs/star.yaml'
+	threads: 16
 	params:
 		outdir = f"{ANNOTATION_DIR}/star/star_build"
 	shell:
 		"""
 		STAR --runMode genomeGenerate \
-		--genomeDir params.outdir \
-		--genomeFastaFile \
-		--runThreadN 16
+		--genomeDir {params.outdir} \
+		--genomeFastaFile {input.masked_genome} \
+		--runThreadN {threads}
 		"""
 
 rule build_done:
@@ -43,17 +43,18 @@ rule align_star:
 	input:
 		R1fq = f"{ANNOTATION_DIR}/rnaseq_reads/{{acc}}_1.fq",
 		R2fq = f"{ANNOTATION_DIR}/rnaseq_reads/{{acc}}_2.fq",
-		STAR_BUILD = rules.params.outdir 
+		STAR_BUILD = rules.params.outdir
+		 
 	log: LOG + '/star/star_log/star_align.log'
 	conda:'../envs/star.yaml'
 	shell:
 		"""
-		STAR --readFilesIn input.R1fq input.R2fq
+		STAR --readFilesIn {input.R1fq} {input.R2fq}
 		--alignIntronMin 20
 		--alignIntronMax 500000
 		--outSAMtype BAM SortedByCoordinate \
 		--twopassMode Basic \
-		--genomeDir input.STAR_BUILD  
+		--genomeDir {input.STAR_BUILD}  
 		"""
 
 rule align_done:
