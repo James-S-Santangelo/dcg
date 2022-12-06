@@ -116,10 +116,10 @@ rule repeat_masker:
 
 rule fasterq_dump:
     output:
-        R1 = temp(f"{ANNOTATION_DIR}/rnaseq_reads/{{acc}}_1.fq"),
-        R2 = temp(f"{ANNOTATION_DIR}/rnaseq_reads/{{acc}}_2.fq")
-    log: LOG_DIR + '/fastq_dump/{{acc}}_fastq_dump.log'
-    conda: '../envs/rnaseq.yaml'
+        R1 = temp(f"{ANNOTATION_DIR}/rnaseq_reads/{{hap}}_{{acc}}_1.fq"),
+        R2 = temp(f"{ANNOTATION_DIR}/rnaseq_reads/{{hap}}_{{acc}}_2.fq")
+    log: LOG_DIR + '/fastq_dump/{hap}_{acc}_fastq_dump.log'
+    conda: '../envs/annotation.yaml'
     params:
         outdir = f"{ANNOTATION_DIR}/rnaseq_reads"
     shell:
@@ -130,9 +130,44 @@ rule fasterq_dump:
             {wildcards.acc} 2> {log}
         """
 
+rule build_star:
+    input:
+        masked_genome = rules.repeat_masker.output.fasta 
+    output:
+        temp(directory(f"{ANNOTATION_DIR}/star/{{hap}}_star_build"))
+    log: LOG_DIR + '/star/{hap}_star_build.log'
+    conda:'../envs/annotation.yaml'
+    threads: 16
+    shell:
+        """
+        STAR --runMode genomeGenerate \
+            --genomeDir {output} \
+            --genomeFastaFile {input.masked_genome} \
+            --runThreadN {threads} 2> {log}
+        """
+
+rule align_star:
+    input:
+        unpack(get_star_align_input_files)
+    output:
+        star_align = f"{ANNOTATION_DIR}/star/star_align/{{hap}}_{{acc}}_sorted.bam" 
+    log: LOG_DIR + '/star/{hap}_{acc}_star_align.log'
+    conda:'../envs/annotation.yaml'
+    params:
+        out = f"{ANNOTATION_DIR}/star/star_align/{{hap}}_{{acc}}_sorted"
+    shell:
+        """
+        STAR --readFilesIn {input.R1} {input.R2} \
+            --outSAMtype BAM SortedByCoordinate \
+            --twopassMode Basic \
+            --genomeDir {input.star_build} \
+            --outFileNamePrefix {params.out} 2> {log} 
+        """
+
 rule annotation_done:
     input:
-        expand(rules.repeat_masker.output, hap='occ1')
+        expand(rules.fasterq_dump.output, acc=RNASEQ_ACCESSIONS, hap='occ1'),
+        expand(rules.align_star.output, acc=ALL_RNASEQ_SAMPLES, hap='occ1')
     output:
         f"{ANNOTATION_DIR}/annotation.done"
     shell:

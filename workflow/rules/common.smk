@@ -16,4 +16,14 @@ def get_minimap_input_files(wildcards):
         hap1 = glob.glob(f"{HAPLOTYPE_FASTA_DIR}/pall1/*.fasta")[0]
         hap2 = glob.glob(f"{HAPLOTYPE_FASTA_DIR}/pall2/new_final_assembly.fasta")[0]
     return { 'hap1' : hap1, 'hap2' : hap2 }
+    
+def get_star_align_input_files(wildcards):
+    star_build = rules.build_star.output
+    if wildcards.acc.startswith('TR'):
+        R1 = glob.glob(f"{config['kooyers_rnaseq']}/{wildcards.acc}/{wildcards.acc}_*_1.fq.gz")[0]
+        R2 = glob.glob(f"{config['kooyers_rnaseq']}/{wildcards.acc}/{wildcards.acc}_*_2.fq.gz")[0]
+    else:
+        R1 = rules.fasterq_dump.output.R1
+        R2 = rules.fasterq_dump.output.R2
+    return { 'R1' : R1, 'R2' : R2, 'star_build' : star_build }
         
