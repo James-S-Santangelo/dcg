@@ -1,0 +1,6 @@
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  -braker2=2.1.6
+  -perl=5.36.0

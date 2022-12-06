@@ -1,0 +1,6 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - perl=5.36.0
+  - perl-app-cpanminus=1.7044
