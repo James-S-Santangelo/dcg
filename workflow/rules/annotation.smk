@@ -114,6 +114,21 @@ rule repeat_masker:
 #### DOWNLOAD AND MAP ALL RNASEQ READS ####
 ###########################################
 
+rule fasterq_dump:
+    output:
+        R1 = temp(f"{ANNOTATION_DIR}/rnaseq_reads/{{acc}}_1.fq"),
+        R2 = temp(f"{ANNOTATION_DIR}/rnaseq_reads/{{acc}}_2.fq")
+    log: LOG_DIR + '/fastq_dump/{{acc}}_fastq_dump.log'
+    conda: '../envs/rnaseq.yaml'
+    params:
+        outdir = f"{ANNOTATION_DIR}/rnaseq_reads"
+    shell:
+        """
+        fasterq-dump --split-3 \
+            --skip-technical \
+            --outdir {params.outdir} \
+            {wildcards.acc} 2> {log}
+        """
 
 rule annotation_done:
     input:
