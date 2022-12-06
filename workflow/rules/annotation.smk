@@ -88,7 +88,6 @@ rule repeat_masker:
         gff = f"{ANNOTATION_DIR}/repeat_masker/{{hap}}/{{hap}}_repeatMasker.gff",
         stats = f"{ANNOTATION_DIR}/repeat_masker/{{hap}}/{{hap}}_repeatMasker.tbl"
     threads: 32
-    #conda: '../envs/annotation.yaml'
     container: 'docker://dfam/tetools:1.6'
     log: LOG_DIR + '/repeat_masker/{hap}_repeat_masker.log'
     params:
@@ -110,6 +109,11 @@ rule repeat_masker:
             mv {params.outdir}/*.gff {output.gff}
             mv {params.outdir}/*.tbl {output.stats} ) &> {log}
         """
+
+###########################################
+#### DOWNLOAD AND MAP ALL RNASEQ READS ####
+###########################################
+
 
 rule annotation_done:
     input:

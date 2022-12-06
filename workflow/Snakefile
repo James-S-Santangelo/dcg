@@ -16,7 +16,6 @@ HCN_LOCI_FASTA = config['hcn_loci_fasta']
 GENMAP_RESOURCE_DIR = config['genmap_files']
 REPBASE = config['repbase']
 RNASEQ_ACCESSIONS = pd.read_csv(config['rnaseq_accessions'], sep = '\t')['accession'].tolist()
-print(RNASEQ_ACCESSIONS)
 
 # Paths for output files
 LOG_DIR = config['log_prefix']
