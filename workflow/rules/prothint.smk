@@ -1,12 +1,23 @@
 #Prothint
 
+rule viridiplantae_orthodb:
+	output:
+		Plant_ProrteinDB = "f{ANNOTATION_DIR}/orthodb/Viridiplantae_protein.fasta"
+	log: LOG_DIR + "f{ANNOTATION_DIR}/orthodb/ortho.log"
+	params:
+		outdir = temp"f{ANNOTATION_DIR}/orthodb"
+	shell:
+	"""
+		wget https://v100.orthodb.org/download/odb10_plants_fasta.tar.gz \
+		tar -zxf odb10_plants_fasta.tar.gz -C {params.outdir}
+		cat {params.outdir}/plants/Rawdata/*" > {output}
+	"""
+
 rule prothint_run:
 	output:
-		gff_prot_basic = f"{ANNOTATION}/prothint/prothint.gff",
-		gff_evidence = f"{ANNOTATION}/prothint/evidence.gff",
-		gff_prot_ready = f"{ANNOTATION}/prothint/prothint_augutus.gff"
+		directory(f"{ANNOTATION_DIR}/prothint"
 	input:
-		plant_db = '../../resources/Viridiplantae_db.fasta',
+		plant_db = rule.viridiplantae_orthodb.Plant_ProteinDB,
 		masked_genome = f"{ANNOTATION}/repeat_masker/{{hap}}/{{hap}}_softMasked.fasta"
 	log: LOG + '/prothint/prot_log/prothint_run.log'
 	params:
@@ -30,14 +41,14 @@ rule prothint_done:
 		touch {output}
 	"""
 
-rule braker2_run:
+rule braker2_run_prothint_with_starbam:
 	output:
 		braker_gtf = f"{ANNOTATION}/braker/braker_dcg/braker.gtf",
 		hintsfile = f"{ANNOTATION}/braker/braker_dcg/hintsfile.gff"
 	input:
-		PROT = {rule.prothint_run.output.gff_prot_ready},
+		PROT = "f{ANNOTATION_DIR}/prothint/prothint_augustus.gff",
 		masked_genome = f"{ANNOTATION}/repeat_masker/{{hap}}/{{hap}}_softMasked.fasta",
-		Star_Bam = f"{ANNOTATION_DIR}/star/star_align/Aligned.sortByCoord.out.bam"
+		Star_Bam = f"{ANNOTATION_DIR}/star/star_align/{{hap}}_{{acc}}_sorted.bam"
 	log: LOG + '/braker/braker_log/braker_annotate.log'
 	params:
 		outputdir = f"{ANNOTATION_DIR}/braker/braker_dcg"
@@ -45,7 +56,7 @@ rule braker2_run:
 	conda:'../env/braker2.yaml'
 	shell:
 	"""
-		cpanm Hash::Merge List::Util MCE::Mutex Module::Load::Conditional Parallel::ForkManager POSIX Scalar::Util::Numeric YAML File::Spec::FunctionsMath::Utils File::HomeDir
+		cpanm Hash::Merge List::Util MCE::Mutex Module::Load::Conditional Parallel::ForkManager POSIX Scalar::Util::Numeric YAML File::Spec::FunctionsMath::Utils File::HomeDir \
 		braker.pl --genome {input.masked_genome} \
 		--hints {input.PROT} \
 		--bam={input.Star_Bam} \
