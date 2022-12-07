@@ -16,7 +16,10 @@ HCN_LOCI_FASTA = config['hcn_loci_fasta']
 GENMAP_RESOURCE_DIR = config['genmap_files']
 REPBASE = config['repbase']
 RNASEQ_ACCESSIONS = pd.read_csv(config['rnaseq_accessions'], sep = '\t')['accession'].tolist()
-print(RNASEQ_ACCESSIONS)
+KOOYERS_RNASEQ = [f for f in os.listdir(config['kooyers_rnaseq']) if f.startswith('TR')]
+
+# Variables for specific rules
+ALL_RNASEQ_SAMPLES = RNASEQ_ACCESSIONS + KOOYERS_RNASEQ
 
 # Paths for output files
 LOG_DIR = config['log_prefix']
@@ -36,12 +39,10 @@ rule all:
         f'{SYNTENY_DIR}/synteny.done',
         f"{GENMAP_RESULTS_DIR}/gen_map.done",
         f"{ANNOTATION_DIR}/annotation.done",
-        f"{ANNOTATION_DIR}/rna_seq.done"
 
 include: 'rules/ref.smk'
 include: 'rules/hcn_loci.smk'
 include: 'rules/synteny.smk'
 include: 'rules/recombination_map.smk'
 include: 'rules/annotation.smk'
-include: 'rules/rnaseq.smk'
 
