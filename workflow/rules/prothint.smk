@@ -22,56 +22,78 @@ rule prothint_run:
 	log: LOG + '/prothint/prot_log/prothint_run.log'
 	params:
 		outputdir = f"{ANNOTATION}/prothint"
-	conda:'../env/prothint.yaml'
+	container:'singularity://james-s-santangelo/braker/braker'
 	shell:
 	"""
-		cpanm MCE::Mutex threads YAML Thread::Queue Math::Utils \
 		prothint.py {input.masked_genome} \
 		{input.plant_db} \
 		--workdir {params.outputdir} \
 	"""
 
-rule prothint_done:
+rule braker_rnaseq:
 	output:
-		f"{ANNOTATION}/prothint.done"
+		hints_rna = f{"ANNOTATION}/braker/braker1_out/hintsfile.gff"	
+		aug_hint_rna = f"{ANNOTATION}/braker/braker1_out/augustus.hints.gtf"
 	input:
-		expand(rules.prothint_run.output)
+		masked_genome = f"{ANNOTATION}/repeat_masker/{{hap}}/{{hap}}_softMasked.fasta",
+		Star_Bam = f"{ANNOTATION_DIR}/star/star_align/{{hap}}_{{acc}}_sorted.bam"
+	log: LOG_DIR + '/braker/braker_log/braker_annotate.log'
+	params:
+		outputdir = f"{ANNOTATION_DIR}/braker/braker1_out"
+	cores:20
+	conda:'singularity://james-s-santangelo/braker/braker'
 	shell:
 	"""
-		touch {output}
-	"""
+		braker.pl --genome {input.masked_genome} \
+		--bam={input.Star_Bam} \
+		--softmasking \
+		--cores {cores} \
+		--workingdir={params.outputdir} \
+		--species="Trifolium repens" \
+		--AUGUSTUS_hints_preds=augustus.hints.gtf
+	""" 
 
-rule braker2_run_prothint_with_starbam:
+rule braker_protein:
 	output:
-		braker_gtf = f"{ANNOTATION}/braker/braker_dcg/braker.gtf",
-		hintsfile = f"{ANNOTATION}/braker/braker_dcg/hintsfile.gff"
+		hints_protein = f{"ANNOTATION}/braker/braker2_out/hintsfile.gff"
+		aug_hint_protein = f"{ANNOTATION}/braker/braker2_out/augustus.hints.gtf"
 	input:
 		PROT = "f{ANNOTATION_DIR}/prothint/prothint_augustus.gff",
 		masked_genome = f"{ANNOTATION}/repeat_masker/{{hap}}/{{hap}}_softMasked.fasta",
-		Star_Bam = f"{ANNOTATION_DIR}/star/star_align/{{hap}}_{{acc}}_sorted.bam"
-	log: LOG + '/braker/braker_log/braker_annotate.log'
+	log: LOG_DIR + '/braker/braker_log/braker_annotate.log'
 	params:
-		outputdir = f"{ANNOTATION_DIR}/braker/braker_dcg"
+		outputdir = f"{ANNOTATION_DIR}/braker/braker2_out"
 	cores:20
-	conda:'../env/braker2.yaml'
+	conda:'singularity://james-s-santangelo/braker/braker'
 	shell:
 	"""
-		cpanm Hash::Merge List::Util MCE::Mutex Module::Load::Conditional Parallel::ForkManager POSIX Scalar::Util::Numeric YAML File::Spec::FunctionsMath::Utils File::HomeDir \
 		braker.pl --genome {input.masked_genome} \
 		--hints {input.PROT} \
-		--bam={input.Star_Bam} \
-		-- etpmode \
+		--epmode \
 		--softmasking \
-		--cores {cores}
-	
+		--cores {cores} \
+		--workingdir={params.outputdir} \
+		--species="Trifolium repens" \
+		--AUGUSTUS_hints_preds=augustus.hints.gtf
 	""" 
 
-rule braker2_done:
+#COMBINE BRAKER RNA-SEQ with BRAKER PROTEIN
+
+rule tsebra_combine:
 	input:
-	expand(rules.braker2_run.output}
+		rna_aug = {rule.braker_rnaseq.output.aug_hint_rna}
+		protein_aug = {rule.braker_protein.output.aug_hint_protein} 
+		hints_rna = {rule.braker_rnaseq.output.hints_rna}
+		hints_protein = {rule.braker_protein.output.hints_protein}
 	output:
-	f"{ANNOTATION}/braker2.done"
+		braker_combined = f"{ANNOTATION_DIR}/braker/tsebra_combined/braker1+2_combined.gft"
+	log: LOG_DIR + '/braker/braker_log/tsebra.log'
+	params:
+		outdir = f"{ANNOTATION_DIR}/braker/tsebra_combined"
 	shell:
 	"""
-	touch {output}
-	"""
+		./bin/tesbra.py -g {input.rna_aug},{input.protein_aug} \
+		-c default.cfg \
+		-e {input.hints_rna},{input.hints_protein} \ 
+		-o f"{params.outdir}/braker1+2_combined.gft"
+	"""	
