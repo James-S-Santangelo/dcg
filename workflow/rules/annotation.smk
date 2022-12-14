@@ -164,6 +164,24 @@ rule align_star:
             --outFileNamePrefix {params.out} 2> {log} 
         """
 
+################
+#### BRAKER ####
+################
+
+rule viridiplantae_orthodb:
+	output:
+		Plant_ProrteinDB = f"{PROGRAM_RESOURCE_DIR}/orthodb/Viridiplantae_protein.fasta"
+	log: LOG_DIR + "/orthodb/ortho.log"
+	params:
+		outdir = f"{PROGRAM_RESOURCE_DIR}/orthodb"
+	shell:
+	    """
+        ( wget --no-check-certificate https://v100.orthodb.org/download/odb10_plants_fasta.tar.gz && 
+        tar -zxf odb10_plants_fasta.tar.gz -C {params.outdir} &&
+        cat {params.outdir}/plants/Rawdata/* > {output} ) 2> {log}
+	    """
+
+
 rule annotation_done:
     input:
         expand(rules.fasterq_dump.output, acc=RNASEQ_ACCESSIONS, hap='occ1'),
