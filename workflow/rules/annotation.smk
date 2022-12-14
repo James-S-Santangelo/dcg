@@ -169,23 +169,85 @@ rule align_star:
 ################
 
 rule viridiplantae_orthodb:
-	output:
-		Plant_ProrteinDB = f"{PROGRAM_RESOURCE_DIR}/orthodb/Viridiplantae_protein.fasta"
-	log: LOG_DIR + "/orthodb/ortho.log"
-	params:
-		outdir = f"{PROGRAM_RESOURCE_DIR}/orthodb"
-	shell:
-	    """
+    output:
+        Plant_ProrteinDB = f"{PROGRAM_RESOURCE_DIR}/orthodb/Viridiplantae_protein.fasta"
+    log: LOG_DIR + "/orthodb/ortho.log"
+    params:
+        outdir = f"{PROGRAM_RESOURCE_DIR}/orthodb"
+    shell:
+        """
         ( wget --no-check-certificate https://v100.orthodb.org/download/odb10_plants_fasta.tar.gz && 
         tar -zxf odb10_plants_fasta.tar.gz -C {params.outdir} &&
         cat {params.outdir}/plants/Rawdata/* > {output} ) 2> {log}
-	    """
+        """
 
+rule braker_protein:
+    input:
+        proteins = rules.viridiplantae_orthodb.output,
+        masked_genome = expand(rules.repeat_masker.output.fasta, hap='occ1'),
+    output:
+        hints_protein = f"{ANNOTATION_DIR}/braker/proteins/hintsfile.gff",
+        aug_hint_protein = f"{ANNOTATION_DIR}/braker/proteins/augustus.hints.gtf"
+    log: LOG_DIR + '/braker/braker_proteins.log'
+    params:
+        outputdir = f"{ANNOTATION_DIR}/braker/proteins"
+    threads: 20
+    container: 'library://james-s-santangelo/braker/braker:2.1.6'
+    shell:
+        """
+        braker.pl --genome={input.masked_genome} \
+            --prot_seq={input.proteins} \
+            --epmode \
+            --softmasking \
+            --cores={threads} \
+            --workingdir={params.outputdir} \
+            --species="Trifolium repens" 2> {log}
+        """ 
+
+rule braker_rnaseq:
+    input:
+        masked_genome = expand(rules.repeat_masker.output.fasta, hap='occ1'),
+        Star_Bam = expand(rules.align_star.output, acc=ALL_RNASEQ_SAMPLES, hap='occ1')
+    output:
+        hints_rna = f"{ANNOTATION_DIR}/braker/braker_rnaseq/hintsfile.gff", 
+        aug_hint_rna = f"{ANNOTATION_DIR}/braker/braker_rnaseq/augustus.hints.gtf"
+    log: LOG_DIR + '/braker/braker_annotate.log'
+    params:
+        outputdir = f"{ANNOTATION_DIR}/braker/braker_rnaseq"
+    threads: 20
+    container: 'library://james-s-santangelo/braker/braker:2.1.6'
+    shell:
+        """
+        braker.pl --genome={input.masked_genome} \
+            --bam={input.Star_Bam} \
+            --softmasking \
+            --cores={threads} \
+            --workingdir={params.outputdir} \
+            --species="Trifolium repens" 2> {log} 
+        """
+
+rule tsebra_combine:
+    input:
+        rna_aug = rules.braker_rnaseq.output.aug_hint_rna,
+        protein_aug = rules.braker_protein.output.aug_hint_protein,
+        hints_rna = rules.braker_rnaseq.output.hints_rna,
+        hints_protein = rules.braker_protein.output.hints_protein
+    output:
+        braker_combined = f"{ANNOTATION_DIR}/braker/tsebra/braker_combined.gtf"
+    log: LOG_DIR + '/braker/tsebra.log'
+    container: 'library://james-s-santangelo/braker/braker:2.1.6'
+    shell:
+        """
+        tesbra.py -g {input.rna_aug},{input.protein_aug} \
+            -c default.cfg \
+            -e {input.hints_rna},{input.hints_protein} \
+            -o {output} 2> {log} 
+        """ 
 
 rule annotation_done:
     input:
         expand(rules.fasterq_dump.output, acc=RNASEQ_ACCESSIONS, hap='occ1'),
-        expand(rules.align_star.output, acc=ALL_RNASEQ_SAMPLES, hap='occ1')
+        rules.tsebra_combine.output
     output:
         f"{ANNOTATION_DIR}/annotation.done"
     shell:
