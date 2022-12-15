@@ -25,13 +25,13 @@ rule configure_repbase:
 
 rule build_repeat_modeler_db:
     input:
-        get_haplotype_fasta
+        EXAMPLE_FASTA
     output:
-        multiext(f"{ANNOTATION_DIR}/repeat_modeler/{{hap}}_rmdb", '.nhr', '.nin', '.nnd', '.nni', '.nog', '.nsq', '.translation')
+        multiext(f"{ANNOTATION_DIR}/repeat_modeler/rmdb", '.nhr', '.nin', '.nnd', '.nni', '.nog', '.nsq', '.translation')
     container: 'docker://dfam/tetools:1.6'
-    log: LOG_DIR + '/build_repeat_modeler_db/{hap}_rmdb.log'
+    log: LOG_DIR + '/build_repeat_modeler_db/rmdb.log'
     params:
-        out = f"{ANNOTATION_DIR}/repeat_modeler/{{hap}}_rmdb"
+        out = f"{ANNOTATION_DIR}/repeat_modeler/rmdb"
     shell:
         """
         BuildDatabase -name {params.out} {input} 2> {log}
@@ -42,18 +42,17 @@ rule repeat_modeler:
         rules.build_repeat_modeler_db.output,
         rules.configure_repbase.output
     output:
-        fasta = f"{ANNOTATION_DIR}/repeat_modeler/{{hap}}_rmdb-families.fa",
-        stk = f"{ANNOTATION_DIR}/repeat_modeler/{{hap}}_rmdb-families.stk"
+        fasta = f"{ANNOTATION_DIR}/repeat_modeler/rmdb-families.fa",
+        stk = f"{ANNOTATION_DIR}/repeat_modeler/rmdb-families.stk"
     threads: 32
     container: 'docker://dfam/tetools:1.6'
-    log: LOG_DIR + '/repeat_modeler/{hap}_rm.log'
+    log: LOG_DIR + '/repeat_modeler/rm.log'
     params:
         db_base = lambda wildcards, input: os.path.splitext(input[0])[0]
     shell:
         """
         RepeatModeler -database {params.db_base} \
             -pa {threads} \
-            -recoverDir ./{wildcards.hap} \
             -LTRStruct &> {log}
         """
 
@@ -62,9 +61,9 @@ rule merge_repeat_databases:
         rm_db = rules.configure_repbase.output.rm,
         tr_db = rules.repeat_modeler.output.fasta
     output:
-        f"{PROGRAM_RESOURCE_DIR}/Libraries/{{hap}}_rm_merged_db.fasta"
+        f"{PROGRAM_RESOURCE_DIR}/Libraries/rm_merged_db.fasta"
     container: 'docker://dfam/tetools:1.6'
-    log: LOG_DIR + '/merge_repeat_databases/{hap}_merge_repeat_databases.log'
+    log: LOG_DIR + '/merge_repeat_databases/merge_repeat_databases.log'
     params:
         rm_db_fasta = f"{PROGRAM_RESOURCE_DIR}/Libraries/rm_db.fasta"
     shell:
@@ -80,18 +79,18 @@ rule merge_repeat_databases:
 rule repeat_masker:
     input:
         lib = rules.merge_repeat_databases.output,
-        fasta = get_haplotype_fasta
+        fasta = EXAMPLE_FASTA
     output:
-        fasta = f"{ANNOTATION_DIR}/repeat_masker/{{hap}}/{{hap}}_softMasked.fasta",
-        cat = f"{ANNOTATION_DIR}/repeat_masker/{{hap}}/{{hap}}_repeatMasker.cat.gz",
-        out = f"{ANNOTATION_DIR}/repeat_masker/{{hap}}/{{hap}}_repeatMasker.out",
-        gff = f"{ANNOTATION_DIR}/repeat_masker/{{hap}}/{{hap}}_repeatMasker.gff",
-        stats = f"{ANNOTATION_DIR}/repeat_masker/{{hap}}/{{hap}}_repeatMasker.tbl"
+        fasta = f"{ANNOTATION_DIR}/repeat_masker/softMasked.fasta",
+        cat = f"{ANNOTATION_DIR}/repeat_masker/repeatMasker.cat.gz",
+        out = f"{ANNOTATION_DIR}/repeat_masker/repeatMasker.out",
+        gff = f"{ANNOTATION_DIR}/repeat_masker/repeatMasker.gff",
+        stats = f"{ANNOTATION_DIR}/repeat_masker/repeatMasker.tbl"
     threads: 32
     container: 'docker://dfam/tetools:1.6'
-    log: LOG_DIR + '/repeat_masker/{hap}_repeat_masker.log'
+    log: LOG_DIR + '/repeat_masker/repeat_masker.log'
     params:
-        outdir = f"{ANNOTATION_DIR}/repeat_masker/{{hap}}/"
+        outdir = f"{ANNOTATION_DIR}/repeat_masker/"
     shell:
         """
         ( RepeatMasker -e ncbi \
@@ -114,19 +113,33 @@ rule repeat_masker:
 #### DOWNLOAD AND MAP ALL RNASEQ READS ####
 ###########################################
 
-rule fasterq_dump:
+rule prefetch:
     output:
-        R1 = temp(f"{ANNOTATION_DIR}/rnaseq_reads/{{hap}}_{{acc}}_1.fq"),
-        R2 = temp(f"{ANNOTATION_DIR}/rnaseq_reads/{{hap}}_{{acc}}_2.fq")
-    log: LOG_DIR + '/fastq_dump/{hap}_{acc}_fastq_dump.log'
+        temp(directory(f"{ANNOTATION_DIR}/rnaseq_reads/{{acc}}"))
+    log: LOG_DIR + '/prefetch/{acc}.log'
     conda: '../envs/annotation.yaml'
     params:
         outdir = f"{ANNOTATION_DIR}/rnaseq_reads"
     shell:
         """
+        prefetch {wildcards.acc} -O {params.outdir} 2> {log}
+        """
+
+rule fasterq_dump:
+    input:
+        expand(rules.prefetch.output, acc=RNASEQ_ACCESSIONS)
+    output:
+        R1 = temp(f"{ANNOTATION_DIR}/rnaseq_reads/{{acc}}_1.fq"),
+        R2 = temp(f"{ANNOTATION_DIR}/rnaseq_reads/{{acc}}_2.fq")
+    log: LOG_DIR + '/fastq_dump/{acc}_fastq_dump.log'
+    conda: '../envs/annotation.yaml'
+    params:
+        outdir = f"{ANNOTATION_DIR}/rnaseq_reads"
+    shell:
+        """
+        cd {params.outdir}
         fasterq-dump --split-3 \
             --skip-technical \
-            --outdir {params.outdir} \
             {wildcards.acc} 2> {log}
         """
 
@@ -134,8 +147,8 @@ rule build_star:
     input:
         masked_genome = rules.repeat_masker.output.fasta 
     output:
-        temp(directory(f"{ANNOTATION_DIR}/star/{{hap}}_star_build"))
-    log: LOG_DIR + '/star/{hap}_star_build.log'
+        temp(directory(f"{ANNOTATION_DIR}/star/star_build"))
+    log: LOG_DIR + '/star/star_build.log'
     conda:'../envs/annotation.yaml'
     threads: 16
     shell:
@@ -150,11 +163,11 @@ rule align_star:
     input:
         unpack(get_star_align_input_files)
     output:
-        star_align = f"{ANNOTATION_DIR}/star/star_align/{{hap}}_{{acc}}_sorted.bam" 
-    log: LOG_DIR + '/star/{hap}_{acc}_star_align.log'
+        star_align = f"{ANNOTATION_DIR}/star/star_align/{{acc}}_sorted.bam" 
+    log: LOG_DIR + '/star/{acc}_star_align.log'
     conda:'../envs/annotation.yaml'
     params:
-        out = f"{ANNOTATION_DIR}/star/star_align/{{hap}}_{{acc}}_sorted"
+        out = f"{ANNOTATION_DIR}/star/star_align/{{acc}}_sorted"
     shell:
         """
         STAR --readFilesIn {input.R1} {input.R2} \
@@ -184,7 +197,7 @@ rule viridiplantae_orthodb:
 rule braker_protein:
     input:
         proteins = rules.viridiplantae_orthodb.output,
-        masked_genome = expand(rules.repeat_masker.output.fasta, hap='occ1'),
+        masked_genome = rules.repeat_masker.output.fasta,
     output:
         hints_protein = f"{ANNOTATION_DIR}/braker/proteins/hintsfile.gff",
         aug_hint_protein = f"{ANNOTATION_DIR}/braker/proteins/augustus.hints.gtf"
@@ -208,7 +221,7 @@ rule braker_protein:
 
 rule braker_rnaseq:
     input:
-        masked_genome = expand(rules.repeat_masker.output.fasta, hap='occ1'),
+        masked_genome = rules.repeat_masker.output.fasta,
         Star_Bam = expand(rules.align_star.output, acc=ALL_RNASEQ_SAMPLES, hap='occ1')
     output:
         hints_rna = f"{ANNOTATION_DIR}/braker/braker_rnaseq/hintsfile.gff", 
@@ -250,7 +263,7 @@ rule tsebra_combine:
 
 rule annotation_done:
     input:
-        expand(rules.fasterq_dump.output, acc=RNASEQ_ACCESSIONS, hap='occ1'),
+        expand(rules.fasterq_dump.output, acc=RNASEQ_ACCESSIONS),
         rules.tsebra_combine.output
     output:
         f"{ANNOTATION_DIR}/annotation.done"
