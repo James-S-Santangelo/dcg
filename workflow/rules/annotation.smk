@@ -190,18 +190,20 @@ rule braker_protein:
         aug_hint_protein = f"{ANNOTATION_DIR}/braker/proteins/augustus.hints.gtf"
     log: LOG_DIR + '/braker/braker_proteins.log'
     params:
-        outputdir = f"{ANNOTATION_DIR}/braker/proteins"
+        outputdir = f"{ANNOTATION_DIR}/braker/proteins",
+        aug_config = "../resources/augustus_config"
     threads: 20
     container: 'library://james-s-santangelo/braker/braker:2.1.6'
     shell:
         """
-        braker.pl --genome={input.masked_genome} \
-            --prot_seq={input.proteins} \
+        export AUGUSTUS_CONFIG_PATH={params.aug_config}
+        braker.pl --genome {input.masked_genome} \
+            --prot_seq {input.proteins} \
             --epmode \
             --softmasking \
-            --cores={threads} \
-            --workingdir={params.outputdir} \
-            --species="Trifolium repens" 2> {log}
+            --cores {threads} \
+            --workingdir {params.outputdir} \
+            --species "Trifolium repens" 2> {log}
         """ 
 
 rule braker_rnaseq:
@@ -213,17 +215,19 @@ rule braker_rnaseq:
         aug_hint_rna = f"{ANNOTATION_DIR}/braker/braker_rnaseq/augustus.hints.gtf"
     log: LOG_DIR + '/braker/braker_annotate.log'
     params:
-        outputdir = f"{ANNOTATION_DIR}/braker/braker_rnaseq"
+        outputdir = f"{ANNOTATION_DIR}/braker/braker_rnaseq",
+        aug_config = "../resources/augustus_config"
     threads: 20
     container: 'library://james-s-santangelo/braker/braker:2.1.6'
     shell:
         """
-        braker.pl --genome={input.masked_genome} \
-            --bam={input.Star_Bam} \
+        export AUGUSTUS_CONFIG_PATH={params.aug_config}
+        braker.pl --genome {input.masked_genome} \
+            --bam {input.Star_Bam} \
             --softmasking \
-            --cores={threads} \
-            --workingdir={params.outputdir} \
-            --species="Trifolium repens" 2> {log} 
+            --cores {threads} \
+            --workingdir {params.outputdir} \
+            --species "Trifolium repens" 2> {log} 
         """
 
 rule tsebra_combine:
