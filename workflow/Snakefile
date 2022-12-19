@@ -30,7 +30,7 @@ GENMAP_RESULTS_DIR = f"{config['results_prefix']}/gen_map"
 ANNOTATION_DIR = f"{config['results_prefix']}/annotation"
 PROGRAM_RESOURCE_DIR = f"{config['results_prefix']}/program_resources"
 
-EXAMPLE_FASTA = HAPLOTYPE_FASTA_DIR + '/occ1/new_final_assembly.fasta' 
+EXAMPLE_FASTA = HAPLOTYPE_FASTA_DIR + '/occ1/review_final_assembly.fasta' 
 
 wildcard_constraints:
     acc = '|'.join(ALL_RNASEQ_SAMPLES)

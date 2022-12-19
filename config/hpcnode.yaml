@@ -1,5 +1,5 @@
 # Input files
-haplotype_fastas: ../resources/haplotype_fastas/dovetail_v2
+haplotype_fastas: ../resources/haplotype_fastas/dovetail_v3
 hcn_loci_fasta: ../resources/hcn_loci/T-repens_HCN_genes.fasta
 repbase: ../resources/RepBaseRepeatMaskerEdition-20181026.tar.gz
 genmap_files: /scratch/projects/trifolium/gwsd/toronto_gwsd/resources/genMap

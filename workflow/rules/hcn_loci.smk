@@ -24,7 +24,7 @@ rule blast_hcn_loci:
             -max_target_seqs 5 2> {log}  
         """
 
-rule hacn_loci_done:
+rule hcn_loci_done:
     input:
         expand(rules.blast_hcn_loci.output, hap=HAPS)
     output:
