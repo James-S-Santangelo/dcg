@@ -10,7 +10,7 @@ def get_haplotype_fasta(wildcards):
         fasta = glob.glob(path + 'review_final_assembly.fasta')[0]
     return fasta
 
-def get_minimap_input_files(wildcards):
+def get_minimap_hap_vs_hap_input_files(wildcards):
     if wildcards.sg == 'occ':
         hap1 = glob.glob(f"{HAPLOTYPE_FASTA_DIR}/occ1/review_final_assembly.fasta")[0]
         hap2 = glob.glob(f"{HAPLOTYPE_FASTA_DIR}/occ2/review_final_assembly.fasta")[0]
