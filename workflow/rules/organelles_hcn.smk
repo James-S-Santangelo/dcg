@@ -5,9 +5,9 @@ rule blast_hcn_loci:
         db = rules.makeblastdb_fromHaplotypeFasta.output,
         query = HCN_LOCI_FASTA
     output:
-        f"{BLAST_DIR}/hcn_loci/{{hap}}_hcnLoci_blast.txt"
-    conda: '../envs/blast.yaml'
-    log: LOG_DIR + '/blast/{hap}_hcnLoci_blast.log'
+        f"{ORGANELLE_HCN_DIR}/hcn_loci/{{hap}}_hcnLoci_blast.txt"
+    conda: '../envs/organelles_hcn.yaml'
+    log: LOG_DIR + '/organelle_hcn/{hap}_hcnLoci_blast.log'
     threads: 4
     params:
         outfmt = "'6 qseqid sseqid pident length mismatch gapopen qstart qend qlen sstart send slen evalue bitscore qcovs qcovhsp'",
@@ -24,14 +24,14 @@ rule blast_hcn_loci:
             -max_target_seqs 5 2> {log}  
         """
 
-rule blast_rbcl_coi:
+rule blast_organelle_seqs:
     input:
         db = rules.makeblastdb_fromHaplotypeFasta.output,
-        query = RBCL_COI
+        query = ORGANELLE_SEQS
     output:
-        f"{BLAST_DIR}/rbcl_coi/{{hap}}_rbcl_coi_blast.txt"
-    conda: '../envs/blast.yaml'
-    log: LOG_DIR + '/blast/{hap}_rbcl_coi_blast.log'
+        f"{ORGANELLE_HCN_DIR}/organelles/{{hap}}_organelles_blast.txt"
+    conda: '../envs/organelles_hcn.yaml'
+    log: LOG_DIR + '/organelle_hcn/{hap}_organelles_blast.log'
     threads: 4
     params:
         outfmt = "'6 qseqid sseqid pident length mismatch gapopen qstart qend qlen sstart send slen evalue bitscore qcovs qcovhsp'",
@@ -48,12 +48,12 @@ rule blast_rbcl_coi:
             -max_target_seqs 5 2> {log}  
         """
 
-rule blast_done:
+rule organelles_hcn_done:
     input:
         expand(rules.blast_hcn_loci.output, hap=HAPS),
-        expand(rules.blast_rbcl_coi.output, hap=HAPS)
+        expand(rules.blast_organelle_seqs.output, hap=HAPS)
     output:
-        f"{BLAST_DIR}/blast.done"
+        f"{ORGANELLE_HCN_DIR}/organelles_hcn.done"
     shell:
         """
         touch {output}

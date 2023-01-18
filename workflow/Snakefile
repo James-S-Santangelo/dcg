@@ -18,7 +18,7 @@ REPBASE = config['repbase']
 RNASEQ_ACCESSIONS = pd.read_csv(config['rnaseq_accessions'], sep = '\t')['accession'].tolist()
 KOOYERS_RNASEQ = [f for f in os.listdir(config['kooyers_rnaseq']) if f.startswith('TR')]
 TRR_FIVE = config['TrR_five']
-RBCL_COI = config['rbcl_coi']
+ORGANELLE_SEQS = config['organelle_seqs']
 
 # Variables for specific rules
 ALL_RNASEQ_SAMPLES = RNASEQ_ACCESSIONS + KOOYERS_RNASEQ
@@ -26,7 +26,7 @@ ALL_RNASEQ_SAMPLES = RNASEQ_ACCESSIONS + KOOYERS_RNASEQ
 # Paths for output files
 LOG_DIR = config['log_prefix']
 REF_DIR = f"{config['results_prefix']}/ref"
-BLAST_DIR = f"{config['results_prefix']}/blast"
+ORGANELLE_HCN_DIR = f"{config['results_prefix']}/blast"
 SYNTENY_DIR = f"{config['results_prefix']}/synteny"
 GENMAP_RESULTS_DIR = f"{config['results_prefix']}/gen_map"
 ANNOTATION_DIR = f"{config['results_prefix']}/annotation"
@@ -42,13 +42,13 @@ include: 'rules/common.smk'
 rule all:
     input:
         f'{REF_DIR}/ref.done',
-        f'{BLAST_DIR}/blast.done',
+        f'{ORGANELLE_HCN_DIR}/organelles_hcn.done',
         f'{SYNTENY_DIR}/synteny.done',
         f"{GENMAP_RESULTS_DIR}/gen_map.done",
         f"{ANNOTATION_DIR}/annotation.done",
 
 include: 'rules/ref.smk'
-include: 'rules/blast.smk'
+include: 'rules/organelles_hcn.smk'
 include: 'rules/synteny.smk'
 include: 'rules/recombination_map.smk'
 include: 'rules/annotation.smk'

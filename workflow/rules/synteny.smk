@@ -21,7 +21,7 @@ rule minimap_hap_vs_TrRvFive:
         TrR_five = TRR_FIVE 
     output:
         f"{SYNTENY_DIR}/minimap/hap_vs_TrRv5/{{hap}}_vs_TrRv5.paf"
-    conda: '../envs/synteny.smk'
+    conda: '../envs/synteny.yaml'
     log: LOG_DIR + '/minimap/{hap}_vs_TrRv5.log'
     threads: 8
     shell:

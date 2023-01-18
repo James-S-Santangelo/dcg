@@ -6,8 +6,8 @@ genmap_files: /scratch/projects/trifolium/gwsd/toronto_gwsd/resources/genMap
 rnaseq_accessions: ../resources/Trepens_rnaseq_accessions.txt
 kooyers_rnaseq: /research/projects/trifolium/kooyers_rnaseq_data/raw_data
 TrR_five: /research/references/trifolium/repens/GCA_005869975.1_AgR_To_v5/GCA_005869975.1_AgR_To_v5_genomic.fna
-rbcl_coi: ../resources/chlor_mit/rbcl_coi.fasta
+organelle_seqs: ../resources/organelles/organelle_seqs.fasta
 
 # Output
-results_prefix: /scratch/projects/trifolium/dovetail/results
+results_prefix: /research/projects/trifolium/dovetail/results
 log_prefix: /scratch/projects/trifolium/dovetail/logs
