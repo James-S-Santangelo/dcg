@@ -25,10 +25,8 @@ ALL_RNASEQ_SAMPLES = RNASEQ_ACCESSIONS + KOOYERS_RNASEQ
 
 # Paths for output files
 LOG_DIR = config['log_prefix']
-REF_DIR = f"{config['results_prefix']}/ref"
-ORGANELLE_HCN_DIR = f"{config['results_prefix']}/blast"
+BLAST_DIR = f"{config['results_prefix']}/blast"
 SYNTENY_DIR = f"{config['results_prefix']}/synteny"
-GENMAP_RESULTS_DIR = f"{config['results_prefix']}/gen_map"
 ANNOTATION_DIR = f"{config['results_prefix']}/annotation"
 PROGRAM_RESOURCE_DIR = f"{config['results_prefix']}/program_resources"
 
@@ -41,15 +39,11 @@ include: 'rules/common.smk'
 
 rule all:
     input:
-        f'{REF_DIR}/ref.done',
-        f'{ORGANELLE_HCN_DIR}/organelles_hcn.done',
+        f'{BLAST_DIR}/blast.done',
         f'{SYNTENY_DIR}/synteny.done',
-        f"{GENMAP_RESULTS_DIR}/gen_map.done",
         f"{ANNOTATION_DIR}/annotation.done",
 
-include: 'rules/ref.smk'
-include: 'rules/organelles_hcn.smk'
+include: 'rules/blast.smk'
 include: 'rules/synteny.smk'
-include: 'rules/recombination_map.smk'
 include: 'rules/annotation.smk'
 
