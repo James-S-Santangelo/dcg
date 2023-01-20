@@ -10,15 +10,20 @@ configfile: '../config/hpcnode.yaml'
 # Haplotype names. Used for finding haplotype fasta
 HAPS = ['occ1', 'occ2', 'pall1', 'pall2']
 
+# Define absolute path to pipeline resources
+RESOURCES = os.path.abspath(config['resources'])
+
 # Input files
-HAPLOTYPE_FASTA_DIR = config['haplotype_fastas']
-HCN_LOCI_FASTA = config['hcn_loci_fasta']
-GENMAP_RESOURCE_DIR = config['genmap_files']
-REPBASE = config['repbase']
-RNASEQ_ACCESSIONS = pd.read_csv(config['rnaseq_accessions'], sep = '\t')['accession'].tolist()
+HAPLOTYPE_FASTA_DIR = f"{RESOURCES}/haplotype_fastas/dovetail_v3"
+HCN_LOCI_FASTA = f"{RESOURCES}/hcn_loci/T-repens_HCN_genes.fasta"
+GENMAP_RESOURCE_DIR = f"{RESOURCES}/genMap"
+REPBASE = f"{RESOURCES}/RepBaseRepeatMaskerEdition-20181026.tar.gz"
+ORGANELLE_SEQS = f"{RESOURCES}/organelles/organelle_seqs.fast"
+TRR_FIVE_SCAFFS = f"{RESOURCES}/TrR_v5_scaff_byLG.csv"
+TRR_FIVE_FASTA = config['TrR_five_fasta']
+
+RNASEQ_ACCESSIONS = pd.read_csv(f"{RESOURCES}/Trepens_rnaseq_accessions.txt", sep = '\t')['accession'].tolist()
 KOOYERS_RNASEQ = [f for f in os.listdir(config['kooyers_rnaseq']) if f.startswith('TR')]
-TRR_FIVE = config['TrR_five']
-ORGANELLE_SEQS = config['organelle_seqs']
 
 # Variables for specific rules
 ALL_RNASEQ_SAMPLES = RNASEQ_ACCESSIONS + KOOYERS_RNASEQ

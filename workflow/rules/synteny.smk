@@ -18,7 +18,7 @@ rule minimap_hap_vs_hap:
 rule minimap_hap_vs_TrRvFive:
     input:
         hap = get_haplotype_fasta,
-        TrR_five = TRR_FIVE 
+        TrR_five = TRR_FIVE_FASTA 
     output:
         f"{SYNTENY_DIR}/minimap/hap_vs_TrRv5/{{hap}}_vs_TrRv5.paf"
     conda: '../envs/synteny.yaml'
