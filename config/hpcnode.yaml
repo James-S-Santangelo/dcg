@@ -2,8 +2,9 @@
 haplotype_fastas: ../resources/haplotype_fastas/dovetail_v3
 hcn_loci_fasta: ../resources/hcn_loci/T-repens_HCN_genes.fasta
 repbase: ../resources/RepBaseRepeatMaskerEdition-20181026.tar.gz
-genmap_files: /scratch/projects/trifolium/gwsd/toronto_gwsd/resources/genMap
+genmap_files: ../resources/genMap
 rnaseq_accessions: ../resources/Trepens_rnaseq_accessions.txt
+TrR_v5_scaffs: ../resources/TrR_v5_scaff_byLG.csv
 kooyers_rnaseq: /research/projects/trifolium/kooyers_rnaseq_data/raw_data
 TrR_five: /research/references/trifolium/repens/GCA_005869975.1_AgR_To_v5/GCA_005869975.1_AgR_To_v5_genomic.fna
 organelle_seqs: ../resources/organelles/organelle_seqs.fasta

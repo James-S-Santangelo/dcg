@@ -29,6 +29,7 @@ BLAST_DIR = f"{config['results_prefix']}/blast"
 SYNTENY_DIR = f"{config['results_prefix']}/synteny"
 ANNOTATION_DIR = f"{config['results_prefix']}/annotation"
 PROGRAM_RESOURCE_DIR = f"{config['results_prefix']}/program_resources"
+REFERENCE_ASSEMBLIES_DIR = f"{config['results_prefix']}/reference_assemblies"
 
 EXAMPLE_FASTA = HAPLOTYPE_FASTA_DIR + '/occ1/review_final_assembly.fasta' 
 
@@ -41,9 +42,11 @@ rule all:
     input:
         f'{BLAST_DIR}/blast.done',
         f'{SYNTENY_DIR}/synteny.done',
+        f'{REFERENCE_ASSEMBLIES_DIR}/reference_assemblies.done',
         f"{ANNOTATION_DIR}/annotation.done",
 
 include: 'rules/blast.smk'
 include: 'rules/synteny.smk'
+include: 'rules/assemble_references.smk'
 include: 'rules/annotation.smk'
 
