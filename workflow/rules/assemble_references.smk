@@ -7,7 +7,7 @@ rule linkage_analysis:
         f"{GENMAP_RESOURCE_DIR}/SG_marker_key.csv",
         f"{GENMAP_RESOURCE_DIR}/DG_genMap.csv",
         f"{GENMAP_RESOURCE_DIR}/SG_genMap.csv",
-        config['TrR_v5_scaffs'],
+        TRR_FIVE_SCAFFS,
         expand(rules.minimap_hap_vs_TrRvFive.output, hap=HAPS)
     output:
         f'{REFERENCE_ASSEMBLIES_DIR}/resources/BLASThits_LGxSG.pdf',
@@ -19,12 +19,24 @@ rule linkage_analysis:
     notebook:
         "../notebooks/linkage_analysis.r.ipynb"
 
+rule create_reference_assemblies:
+    input:
+       f'{REFERENCE_ASSEMBLIES_DIR}/resources/TrR_v5_to_v6_chromosomeMapping.csv'
+    output:
+        f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/TrR_v6_haploid_reference.fasta"
+    conda:
+        '../envs/notebooks.yaml'
+    params:
+        HAPLOTYPE_FASTA_DIR
+    notebook:
+        "../notebooks/generate_assemblies.py.ipynb"
+
 rule reference_assemblies_done:
     input:
-        rules.linkage_analysis.output
+        rules.create_reference_assemblies.output
     output:
         f'{REFERENCE_ASSEMBLIES_DIR}/reference_assemblies.done'
     shell:
         """
-        echo 'Done'
+        touch {output}
         """
