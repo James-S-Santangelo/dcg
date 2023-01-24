@@ -5,4 +5,4 @@ TrR_five_fasta: /research/references/trifolium/repens/GCA_005869975.1_AgR_To_v5/
 
 # Output
 results_prefix: /research/projects/trifolium/dovetail/results
-log_prefix: /scratch/projects/trifolium/dovetail/logs
+log_prefix: /research/projects/trifolium/dovetail/logs

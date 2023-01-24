@@ -25,7 +25,7 @@ rule configure_repbase:
 
 rule build_repeat_modeler_db:
     input:
-        EXAMPLE_FASTA
+        rules.create_reference_assemblies.output
     output:
         multiext(f"{ANNOTATION_DIR}/repeat_modeler/rmdb", '.nhr', '.nin', '.nnd', '.nni', '.nog', '.nsq', '.translation')
     container: 'docker://dfam/tetools:1.6'
@@ -34,7 +34,7 @@ rule build_repeat_modeler_db:
         out = f"{ANNOTATION_DIR}/repeat_modeler/rmdb"
     shell:
         """
-        BuildDatabase -name {params.out} {input} 2> {log}
+        BuildDatabase -name {params.out} {input} &> {log}
         """
 
 rule repeat_modeler:
@@ -79,13 +79,13 @@ rule merge_repeat_databases:
 rule repeat_masker:
     input:
         lib = rules.merge_repeat_databases.output,
-        fasta = EXAMPLE_FASTA
+        fasta = rules.create_reference_assemblies.output
     output:
-        fasta = f"{ANNOTATION_DIR}/repeat_masker/softMasked.fasta",
-        cat = f"{ANNOTATION_DIR}/repeat_masker/repeatMasker.cat.gz",
-        out = f"{ANNOTATION_DIR}/repeat_masker/repeatMasker.out",
-        gff = f"{ANNOTATION_DIR}/repeat_masker/repeatMasker.gff",
-        stats = f"{ANNOTATION_DIR}/repeat_masker/repeatMasker.tbl"
+        fasta = f"{ANNOTATION_DIR}/repeat_masker/TrR_v6_haploid_reference_softMasked.fasta",
+        cat = f"{ANNOTATION_DIR}/repeat_masker/TrR_v6_haploid_reference_repeatMasker.cat.gz",
+        out = f"{ANNOTATION_DIR}/repeat_masker/TrR_v6_haploid_reference_repeatMasker.out",
+        gff = f"{ANNOTATION_DIR}/repeat_masker/TrR_v6_haploid_reference_repeatMasker.gff",
+        stats = f"{ANNOTATION_DIR}/repeat_masker/TrR_v6_haploid_reference_repeatMasker.tbl"
     threads: 32
     container: 'docker://dfam/tetools:1.6'
     log: LOG_DIR + '/repeat_masker/repeat_masker.log'
