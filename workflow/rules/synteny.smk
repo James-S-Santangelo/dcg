@@ -4,9 +4,9 @@ rule minimap_hap_vs_hap:
     input:
         unpack(get_minimap_hap_vs_hap_input_files)
     output:
-        f'{SYNTENY_DIR}/minimap/hap_vs_hap/{{sg}}_hap1_vs_hap2.paf'
+        f'{SYNTENY_DIR}/minimap/hap_vs_hap/{{hap_comp}}.paf'
     conda: '../envs/synteny.yaml'
-    log: LOG_DIR + '/minimap/{sg}_minimap_hap_vs_hap.log'
+    log: LOG_DIR + '/minimap/minimap_{hap_comp}.log'
     threads: 8
     shell:
         """
@@ -34,7 +34,7 @@ rule minimap_hap_vs_TrRvFive:
 
 rule synteny_done:
     input:
-        expand(rules.minimap_hap_vs_hap.output, sg=['occ', 'pall']),
+        expand(rules.minimap_hap_vs_hap.output, hap_comp=HAP_VS_HAP),
         expand(rules.minimap_hap_vs_TrRvFive.output, hap=HAPS)
     output:
         f"{SYNTENY_DIR}/synteny.done"

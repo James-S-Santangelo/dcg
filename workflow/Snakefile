@@ -36,7 +36,7 @@ ANNOTATION_DIR = f"{config['results_prefix']}/annotation"
 PROGRAM_RESOURCE_DIR = f"{config['results_prefix']}/program_resources"
 REFERENCE_ASSEMBLIES_DIR = f"{config['results_prefix']}/reference_assemblies"
 
-EXAMPLE_FASTA = HAPLOTYPE_FASTA_DIR + '/occ1/review_final_assembly.fasta' 
+HAP_VS_HAP = [f'{i}-{j}' for i in HAPS for j in HAPS if i != j]
 
 wildcard_constraints:
     acc = '|'.join(ALL_RNASEQ_SAMPLES)

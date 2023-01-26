@@ -11,13 +11,23 @@ def get_haplotype_fasta(wildcards):
     return fasta
 
 def get_minimap_hap_vs_hap_input_files(wildcards):
-    if wildcards.sg == 'occ':
-        hap1 = glob.glob(f"{HAPLOTYPE_FASTA_DIR}/occ1/review_final_assembly.fasta")[0]
-        hap2 = glob.glob(f"{HAPLOTYPE_FASTA_DIR}/occ2/review_final_assembly.fasta")[0]
-    else:
-        hap1 = glob.glob(f"{HAPLOTYPE_FASTA_DIR}/pall1/*.fasta")[0]
-        hap2 = glob.glob(f"{HAPLOTYPE_FASTA_DIR}/pall2/new_final_assembly.fasta")[0]
-    return { 'hap1' : hap1, 'hap2' : hap2 }
+    hap1 = wildcards.hap_comp.split('-')[0]
+    hap2 = wildcards.hap_comp.split('-')[1]
+   
+    def get_fasta(hap):
+        path = f"{HAPLOTYPE_FASTA_DIR}/{hap}/"
+        if hap == 'pall1':
+            fasta = glob.glob(path + '*.fasta')[0]
+        elif hap == 'pall2':
+            fasta = glob.glob(path + 'new_final_assembly.fasta')[0]
+        else:
+            fasta = glob.glob(path + 'review_final_assembly.fasta')[0]
+        return fasta
+
+    hap1_fasta = get_fasta(hap1)
+    hap2_fasta = get_fasta(hap2)
+
+    return { 'hap1' : hap1_fasta, 'hap2' : hap2_fasta }
     
 def get_star_align_input_files(wildcards):
     star_build = rules.build_star.output

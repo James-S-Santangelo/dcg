@@ -22,7 +22,7 @@ rule linkage_analysis:
 rule create_reference_assemblies:
     input:
        f'{REFERENCE_ASSEMBLIES_DIR}/resources/TrR_v5_to_v6_chromosomeMapping.csv',
-        expand(rules.minimap_hap_vs_hap.output, sg='occ')
+        expand(rules.minimap_hap_vs_hap.output, hap_comp=HAP_VS_HAP)
     output:
         f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/TrR_v6_haploid_reference.fasta"
     conda:
