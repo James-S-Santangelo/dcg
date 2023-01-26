@@ -44,7 +44,7 @@ rule repeat_modeler:
     output:
         fasta = f"{ANNOTATION_DIR}/repeat_modeler/rmdb-families.fa",
         stk = f"{ANNOTATION_DIR}/repeat_modeler/rmdb-families.stk"
-    threads: 32
+    threads: 48
     container: 'docker://dfam/tetools:1.6'
     log: LOG_DIR + '/repeat_modeler/rm.log'
     params:
@@ -86,7 +86,7 @@ rule repeat_masker:
         out = f"{ANNOTATION_DIR}/repeat_masker/TrR_v6_haploid_reference_repeatMasker.out",
         gff = f"{ANNOTATION_DIR}/repeat_masker/TrR_v6_haploid_reference_repeatMasker.gff",
         stats = f"{ANNOTATION_DIR}/repeat_masker/TrR_v6_haploid_reference_repeatMasker.tbl"
-    threads: 32
+    threads: 48
     container: 'docker://dfam/tetools:1.6'
     log: LOG_DIR + '/repeat_masker/repeat_masker.log'
     params:
