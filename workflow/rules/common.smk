@@ -1,31 +1,15 @@
 # Python functions used through workflow
 
 def get_haplotype_fasta(wildcards):
-    path = f"{HAPLOTYPE_FASTA_DIR}/{wildcards.hap}/"
-    if wildcards.hap == 'pall1':
-        fasta = glob.glob(path + '*.fasta')[0]
-    elif wildcards.hap == 'pall2':
-        fasta = glob.glob(path + 'new_final_assembly.fasta')[0]
-    else:
-        fasta = glob.glob(path + 'review_final_assembly.fasta')[0]
+    fasta = glob.glob(f"{HAPLOTYPE_FASTA_DIR}/{wildcards.hap}.fasta")[0]
     return fasta
 
 def get_minimap_hap_vs_hap_input_files(wildcards):
     hap1 = wildcards.hap_comp.split('-')[0]
     hap2 = wildcards.hap_comp.split('-')[1]
    
-    def get_fasta(hap):
-        path = f"{HAPLOTYPE_FASTA_DIR}/{hap}/"
-        if hap == 'pall1':
-            fasta = glob.glob(path + '*.fasta')[0]
-        elif hap == 'pall2':
-            fasta = glob.glob(path + 'new_final_assembly.fasta')[0]
-        else:
-            fasta = glob.glob(path + 'review_final_assembly.fasta')[0]
-        return fasta
-
-    hap1_fasta = get_fasta(hap1)
-    hap2_fasta = get_fasta(hap2)
+    hap1_fasta = glob.glob(f"{HAPLOTYPE_FASTA_DIR}/{hap1}.fasta")[0]
+    hap2_fasta = glob.glob(f"{HAPLOTYPE_FASTA_DIR}/{hap2}.fasta")[0]
 
     return { 'hap1' : hap1_fasta, 'hap2' : hap2_fasta }
     

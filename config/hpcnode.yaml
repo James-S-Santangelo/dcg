@@ -4,5 +4,5 @@ kooyers_rnaseq: /research/projects/trifolium/kooyers_rnaseq_data/raw_data
 TrR_five_fasta: /research/references/trifolium/repens/GCA_005869975.1_AgR_To_v5/GCA_005869975.1_AgR_To_v5_genomic.fna
 
 # Output
-results_prefix: /research/projects/trifolium/dovetail/results
-log_prefix: /research/projects/trifolium/dovetail/logs
+results_prefix: /research/projects/trifolium/dovetail/dcg/results
+log_prefix: /research/projects/trifolium/dovetail/dcg/logs
