@@ -31,11 +31,11 @@ ALL_RNASEQ_SAMPLES = RNASEQ_ACCESSIONS + KOOYERS_RNASEQ
 # Paths for output files
 LOG_DIR = config['log_prefix']
 BLAST_DIR = f"{config['results_prefix']}/blast"
-SYNTENY_DIR = f"{config['results_prefix']}/synteny"
+MINIMAP_DIR = f"{config['results_prefix']}/minimap"
 ANNOTATION_DIR = f"{config['results_prefix']}/annotation"
 PROGRAM_RESOURCE_DIR = f"{config['results_prefix']}/program_resources"
 REFERENCE_ASSEMBLIES_DIR = f"{config['results_prefix']}/reference_assemblies"
-FIGURES_DIR = f"{config['results_prefix']}/figures"
+QC_DIR = f"{config['results_prefix']}/qc"
 
 HAP_VS_HAP = [f'{i}-{j}' for i in HAPS for j in HAPS if i != j]
 
@@ -47,12 +47,13 @@ include: 'rules/common.smk'
 rule all:
     input:
         f'{BLAST_DIR}/blast.done',
-        f'{SYNTENY_DIR}/synteny.done',
+        f'{MINIMAP_DIR}/minimap.done',
         f'{REFERENCE_ASSEMBLIES_DIR}/reference_assemblies.done',
         f"{ANNOTATION_DIR}/annotation.done",
+        f'{QC_DIR}/qc.done'
 
 include: 'rules/blast.smk'
-include: 'rules/synteny.smk'
+include: 'rules/minimap.smk'
 include: 'rules/assemble_references.smk'
 include: 'rules/annotation.smk'
-
+include: 'rules/qc.smk'
