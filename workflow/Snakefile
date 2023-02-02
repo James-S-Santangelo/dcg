@@ -35,6 +35,7 @@ SYNTENY_DIR = f"{config['results_prefix']}/synteny"
 ANNOTATION_DIR = f"{config['results_prefix']}/annotation"
 PROGRAM_RESOURCE_DIR = f"{config['results_prefix']}/program_resources"
 REFERENCE_ASSEMBLIES_DIR = f"{config['results_prefix']}/reference_assemblies"
+FIGURES_DIR = f"{config['results_prefix']}/figures"
 
 HAP_VS_HAP = [f'{i}-{j}' for i in HAPS for j in HAPS if i != j]
 

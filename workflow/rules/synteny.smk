@@ -15,6 +15,14 @@ rule minimap_hap_vs_hap_paf:
             --cs | sort -k6,6 -k8,8 > {output} ) 2> {log}
         """
 
+rule dotplot_hap_vs_hap:
+    input:
+        rules.minimap_hap_vs_hap_paf.output
+    output:
+        f"{FIGURES_DIR}/dotplots/hap_vs_hap/{{hap_comp}}.pdf"
+    conda: '../envs/figures.yaml'
+    script:
+        "../scripts/r/dotplot_hap_vs_hap.R"
 
 rule minimap_hap_vs_hap_bam:
     input:
@@ -50,7 +58,7 @@ rule minimap_hap_vs_TrRvFive:
 
 rule synteny_done:
     input:
-        expand(rules.minimap_hap_vs_hap_paf.output, hap_comp=HAP_VS_HAP),
+        expand(rules.dotplot_hap_vs_hap.output, hap_comp='occ1-occ2'),
         expand(rules.minimap_hap_vs_hap_bam.output, hap_comp=HAP_VS_HAP),
         expand(rules.minimap_hap_vs_TrRvFive.output, hap=HAPS)
     output:
