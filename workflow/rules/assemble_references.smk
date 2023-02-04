@@ -19,16 +19,30 @@ rule linkage_analysis:
     notebook:
         "../notebooks/linkage_analysis.r.ipynb"
 
+rule fix_haplotype_issues:
+    input:
+        [HAPLOTYPE_FASTA_DIR + f"/{hap}.agp" for hap in HAPS],
+        [HAPLOTYPE_FASTA_DIR + f"/{hap}.fasta" for hap in HAPS],
+        expand(rules.dotplot_hap_vs_hap.output, hap_comp=HAP_VS_HAP)
+    output:
+        f"{REFERENCE_ASSEMBLIES_DIR}/revised_haplotypes/occ1_revised.fasta",
+        f"{REFERENCE_ASSEMBLIES_DIR}/revised_haplotypes/occ2_revised.fasta",
+        f"{REFERENCE_ASSEMBLIES_DIR}/revised_haplotypes/pall1_revised.fasta",
+        f"{REFERENCE_ASSEMBLIES_DIR}/revised_haplotypes/pall2_revised.fasta"
+    log: LOG_DIR + '/notebooks/fix_haplotype_issues_processed.ipynb'
+    conda: '../envs/notebooks.yaml'
+    notebook:
+        "../notebooks/fix_assembly_issues.py.ipynb"
+
 rule create_reference_assemblies:
     input:
-       f'{REFERENCE_ASSEMBLIES_DIR}/resources/TrR_v5_to_v6_chromosomeMapping.csv',
+        rules.fix_haplotype_issues.output,
+        f'{REFERENCE_ASSEMBLIES_DIR}/resources/TrR_v5_to_v6_chromosomeMapping.csv',
         expand(rules.minimap_hap_vs_hap_paf.output, hap_comp=HAP_VS_HAP)
     output:
         f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/TrR_v6_haploid_reference.fasta"
     conda:
         '../envs/notebooks.yaml'
-    params:
-        HAPLOTYPE_FASTA_DIR
     notebook:
         "../notebooks/generate_assemblies.py.ipynb"
 

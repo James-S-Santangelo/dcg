@@ -54,6 +54,6 @@ rule all:
 
 include: 'rules/blast.smk'
 include: 'rules/minimap.smk'
+include: 'rules/qc.smk'
 include: 'rules/assemble_references.smk'
 include: 'rules/annotation.smk'
-include: 'rules/qc.smk'
