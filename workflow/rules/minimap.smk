@@ -15,21 +15,6 @@ rule minimap_hap_vs_hap_paf:
             --cs | sort -k6,6 -k8,8 > {output} ) 2> {log}
         """
 
-rule minimap_hap_vs_hap_bam:
-    input:
-        unpack(get_minimap_hap_vs_hap_input_files)
-    output:
-        f'{MINIMAP_DIR}/hap_vs_hap/bam/{{hap_comp}}.bam'
-    conda: '../envs/minimap.yaml'
-    log: LOG_DIR + '/minimap/{hap_comp}_log.log'
-    threads: 8
-    shell:
-        """
-        ( minimap2 -ax asm5 {input.hap1} {input.hap2} \
-            -t {threads} | samtools sort -@ {threads} - -o {output} &&\
-            samtools index {output} ) 2> {log}
-        """
-
 rule minimap_hap_vs_TrRvFive:
     input:
         hap = get_haplotype_fasta,
@@ -49,7 +34,6 @@ rule minimap_hap_vs_TrRvFive:
 rule minimap_done:
     input:
         expand(rules.minimap_hap_vs_hap_paf.output, hap_comp=HAP_VS_HAP),
-        expand(rules.minimap_hap_vs_hap_bam.output, hap_comp=HAP_VS_HAP),
         expand(rules.minimap_hap_vs_TrRvFive.output, hap=HAPS)
     output:
         f"{MINIMAP_DIR}/minimap.done"
