@@ -31,9 +31,18 @@ rule minimap_hap_vs_TrRvFive:
             --cs | sort -k6,6 -k8,8 > {output} ) 2> {log}
         """
 
+rule dotplot_hap_vs_hap:
+    input:
+        rules.minimap_hap_vs_hap_paf.output
+    output:
+        f"{QC_DIR}/dotplots/{{ver}}_haps/{{hap_comp}}.pdf"
+    conda: '../envs/qc.yaml'
+    script:
+        "../scripts/r/dotplot_hap_vs_hap.R"
+
 rule minimap_done:
     input:
-        expand(rules.minimap_hap_vs_hap_paf.output, ver=['original', 'revised'], hap_comp=HAP_VS_HAP),
+        expand(rules.dotplot_hap_vs_hap.output, ver=['original', 'revised'], hap_comp=HAP_VS_HAP),
         expand(rules.minimap_hap_vs_TrRvFive.output, hap=HAPS)
     output:
         f"{MINIMAP_DIR}/minimap.done"

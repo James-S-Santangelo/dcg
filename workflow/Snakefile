@@ -36,6 +36,7 @@ ANNOTATION_DIR = f"{config['results_prefix']}/annotation"
 PROGRAM_RESOURCE_DIR = f"{config['results_prefix']}/program_resources"
 REFERENCE_ASSEMBLIES_DIR = f"{config['results_prefix']}/reference_assemblies"
 QC_DIR = f"{config['results_prefix']}/qc"
+REVISED_HAP_DIR = f"{config['results_prefix']}/revised_haplotypes"
 
 HAP_VS_HAP = [f'{i}-{j}' for i in HAPS for j in HAPS if i != j]
 
@@ -50,10 +51,12 @@ rule all:
         f'{MINIMAP_DIR}/minimap.done',
         f'{REFERENCE_ASSEMBLIES_DIR}/reference_assemblies.done',
         f"{ANNOTATION_DIR}/annotation.done",
-        f'{QC_DIR}/qc.done'
+        f'{QC_DIR}/qc.done',
+        f"{REVISED_HAP_DIR}/revised_haplotypes.done"
 
-include: 'rules/blast.smk'
 include: 'rules/minimap.smk'
+include: 'rules/fix_haplotypes.smk'
+include: 'rules/blast.smk'
 include: 'rules/qc.smk'
 include: 'rules/assemble_references.smk'
 include: 'rules/annotation.smk'

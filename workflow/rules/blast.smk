@@ -2,7 +2,7 @@
 
 rule makeblastdb_fromHaplotypeFasta:
     input:
-        get_haplotype_fasta
+        f"{REVISED_HAP_DIR}/{{hap}}_revised.fasta"
     output:
         multiext(f'{BLAST_DIR}/blastDBs/{{hap}}/{{hap}}.fasta', '.ndb', '.nhr', '.nin', '.nog', '.nos', '.not', '.nsq', '.ntf', '.nto') 
     conda: '../envs/blast.yaml'
