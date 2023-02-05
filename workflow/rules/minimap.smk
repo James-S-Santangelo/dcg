@@ -4,9 +4,9 @@ rule minimap_hap_vs_hap_paf:
     input:
         unpack(get_minimap_hap_vs_hap_input_files)
     output:
-        f'{MINIMAP_DIR}/hap_vs_hap/paf/{{hap_comp}}.paf'
+        f'{MINIMAP_DIR}/hap_vs_hap/{{ver}}/{{hap_comp}}.paf'
     conda: '../envs/minimap.yaml'
-    log: LOG_DIR + '/minimap/{hap_comp}_paf.log'
+    log: LOG_DIR + '/minimap/{hap_comp}_{ver}_paf.log'
     threads: 8
     shell:
         """
@@ -33,7 +33,7 @@ rule minimap_hap_vs_TrRvFive:
 
 rule minimap_done:
     input:
-        expand(rules.minimap_hap_vs_hap_paf.output, hap_comp=HAP_VS_HAP),
+        expand(rules.minimap_hap_vs_hap_paf.output, ver=['original', 'revised'], hap_comp=HAP_VS_HAP),
         expand(rules.minimap_hap_vs_TrRvFive.output, hap=HAPS)
     output:
         f"{MINIMAP_DIR}/minimap.done"

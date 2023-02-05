@@ -23,7 +23,7 @@ rule fix_haplotype_issues:
     input:
         [HAPLOTYPE_FASTA_DIR + f"/{hap}.agp" for hap in HAPS],
         [HAPLOTYPE_FASTA_DIR + f"/{hap}.fasta" for hap in HAPS],
-        expand(rules.dotplot_hap_vs_hap.output, hap_comp=HAP_VS_HAP)
+        expand(rules.dotplot_hap_vs_hap.output, ver='original', hap_comp=HAP_VS_HAP)
     output:
         f"{REFERENCE_ASSEMBLIES_DIR}/revised_haplotypes/occ1_revised.fasta",
         f"{REFERENCE_ASSEMBLIES_DIR}/revised_haplotypes/occ2_revised.fasta",
@@ -38,7 +38,7 @@ rule create_reference_assemblies:
     input:
         rules.fix_haplotype_issues.output,
         f'{REFERENCE_ASSEMBLIES_DIR}/resources/TrR_v5_to_v6_chromosomeMapping.csv',
-        expand(rules.minimap_hap_vs_hap_paf.output, hap_comp=HAP_VS_HAP)
+        expand(rules.minimap_hap_vs_hap_paf.output, ver='original', hap_comp=HAP_VS_HAP)
     output:
         f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/TrR_v6_haploid_reference.fasta"
     conda:
