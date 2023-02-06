@@ -15,6 +15,7 @@ rule TrRvSix_vs_TrRvFive_and_LG:
         f'{QC_DIR}/TrRv6_vs_TrR5_and_LG/TrRv6_longestScaffolds_byLinkageGroup.csv',
         f'{QC_DIR}/TrRv6_vs_TrR5_and_LG/TrR_v5_to_v6_chromosomeMapping.csv',
         f'{QC_DIR}/TrRv6_vs_TrR5_and_LG/TrR_v5_to_v6_chromosomeOrientation.pdf',
+        f'{QC_DIR}/TrRv6_vs_TrR5_and_LG/TrR_v6_chromosomesToReverseComplement.csv',
     log: LOG_DIR + '/notebooks/TrRvSix_vs_TrRvFive_and_LG_processed.ipynb'
     conda: '../envs/notebooks.yaml'
     notebook:
