@@ -135,10 +135,12 @@ rule fasterq_dump:
     conda: '../envs/annotation.yaml'
     params:
         outdir = f"{ANNOTATION_DIR}/rnaseq_reads"
+    threads: 6
     shell:
         """
         cd {params.outdir}
         fasterq-dump --split-3 \
+            -e {threads} \
             --skip-technical \
             {wildcards.acc} 2> {log}
         """
