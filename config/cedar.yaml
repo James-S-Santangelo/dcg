@@ -1,0 +1,8 @@
+# Input files
+resources: ../resources
+kooyers_rnaseq: /home/santang3/projects/def-johnso73/raw_data/kooyers_rnaseq_data/raw_data
+TrR_five_fasta: /home/santang3/projects/def-johnso73/raw_data/TrR_v5/GCA_005869975.1_AgR_To_v5_genomic.fna
+
+# Output
+results_prefix: /home/santang3/scratch/dovetail/results 
+log_prefix: /home/santang3/scratch/dovetail/logs
