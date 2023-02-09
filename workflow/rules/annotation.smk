@@ -136,6 +136,9 @@ rule fasterq_dump:
     params:
         outdir = f"{ANNOTATION_DIR}/rnaseq_reads"
     threads: 6
+    resources:
+        mem_mb = lambda attempt, wildcards: attempt * 2000,
+        time = "1:00:00"
     shell:
         """
         cd {params.outdir}
@@ -153,6 +156,9 @@ rule build_star:
     log: LOG_DIR + '/star/star_build.log'
     conda:'../envs/annotation.yaml'
     threads: 16
+    resources:
+        mem_mb = lambda attempt, wildcards: attempt * 2000,
+        time = "1:00:00"
     shell:
         """
         STAR --runMode genomeGenerate \
@@ -170,12 +176,17 @@ rule align_star:
     conda:'../envs/annotation.yaml'
     params:
         out = f"{ANNOTATION_DIR}/star/star_align/{{acc}}_sorted"
+    threads: 6
+    resources:
+        mem_mb = lambda attempt, wildcards: attempt * 10000,
+        time = "6:00:00"
     shell:
         """
         STAR --readFilesIn {input.R1} {input.R2} \
             --outSAMtype BAM SortedByCoordinate \
             --twopassMode Basic \
             --genomeDir {input.star_build} \
+            --runThreadN {threads} \
             --outFileNamePrefix {params.out} 2> {log} 
         """
 
