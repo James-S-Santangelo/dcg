@@ -24,7 +24,7 @@ def get_star_align_input_files(wildcards):
         R1 = glob.glob(f"{config['kooyers_rnaseq']}/{wildcards.acc}/{wildcards.acc}_*_1.fq.gz")[0]
         R2 = glob.glob(f"{config['kooyers_rnaseq']}/{wildcards.acc}/{wildcards.acc}_*_2.fq.gz")[0]
     else:
-        R1 = rules.fasterq_dump.output.R1
-        R2 = rules.fasterq_dump.output.R2
+        R1 = rules.gzip_fastq.output.R1
+        R2 = rules.gzip_fastq.output.R2
     return { 'R1' : R1, 'R2' : R2, 'star_build' : star_build }
         
