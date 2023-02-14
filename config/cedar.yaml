@@ -2,6 +2,8 @@
 resources: ../resources
 kooyers_rnaseq: /home/santang3/scratch/dovetail/kooyers_rnaseq_data/raw_data
 TrR_five_fasta: /home/santang3/projects/def-johnso73/raw_data/TrR_v5/GCA_005869975.1_AgR_To_v5_genomic.fna
+genemark: /home/santang3/downloads/gmes_linux_64_4
+prothint: /home/santang3/downloads/ProtHint/bin
 
 # Output
 results_prefix: /home/santang3/scratch/dovetail/results 

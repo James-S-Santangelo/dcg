@@ -8,7 +8,7 @@ cluster: "slurm-submit.py"
 cluster-status: "slurm-status.py"
 
 default-resources: [mem_mb=4000, time="01:00:00", tmpdir="/home/santang3/scratch/dovetail/tmp"]
-restart-times: 3
+#restart-times: 3
 max-jobs-per-second: 1
 max-status-checks-per-second: 1
 latency-wait: 60
@@ -16,7 +16,7 @@ rerun-incomplete: True
 printshellcmds: True
 use-conda: True
 use-singularity: True
-singularity-args: "--bind /scratch"
+singularity-args: "--bind /scratch --bind /home"
 keep-going: True
 notemp: True
 conda-frontend: "mamba"

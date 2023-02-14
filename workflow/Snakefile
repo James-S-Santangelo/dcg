@@ -13,6 +13,9 @@ HAPS = ['occ1', 'occ2', 'pall1', 'pall2']
 # Define absolute path to pipeline resources
 RESOURCES = os.path.abspath(config['resources'])
 
+GENEMARK = config['genemark']
+PROTHINT = config['prothint']
+
 # Input files
 HAPLOTYPE_FASTA_DIR = f"{RESOURCES}/haplotype_fastas"
 HCN_LOCI_FASTA = f"{RESOURCES}/hcn_loci/T-repens_HCN_genes.fasta"
