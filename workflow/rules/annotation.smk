@@ -248,11 +248,11 @@ rule braker_protein:
         time = '06:00:00'
     shell:
         """
-        export GENEMARK_PATH={params.genemark}
-        export PROTHINT_PATH={params.prothint}
         braker.pl --genome {input.masked_genome} \
             --prot_seq {input.proteins} \
             --softmasking \
+            --GENEMARK_PATH {params.genemark} \
+            --PROTHINT_PATH {params.prothint} \
             --threads {threads} \
             --workingdir {params.outputdir} \
             --species "Trifolium repens" 2> {log}
@@ -276,11 +276,11 @@ rule braker_rnaseq:
         time = '06:00:00'
     shell:
         """
-        export GENEMARK_PATH={params.genemark}
         braker.pl --genome {input.masked_genome} \
             --bam {input.Star_Bam} \
             --softmasking \
             --threads {threads} \
+            --GENEMARK_PATH={params.genemark} \
             --workingdir {params.outputdir} \
             --species "Trifolium repens" 2> {log} 
         """
