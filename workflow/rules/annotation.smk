@@ -229,14 +229,36 @@ rule viridiplantae_orthodb:
         cat {params.outdir}/plants/Rawdata/* > {output} ) 2> {log}
         """
 
+rule download_uniprot_fabaceae_db:
+    output:
+        f'{PROGRAM_RESOURCE_DIR}/uniprot/fabaceae_proteins.fasta'
+    log: LOG_DIR + '/uniprot_download/fabaceae_proteins_dl.log'
+    params:
+        url = "https://rest.uniprot.org/uniprotkb/stream?compressed=false&format=fasta&query=%28taxonomy_name%3Afabaceae%29"
+    shell:
+        """
+        curl --output {output} '{params.url}' 2> {log}
+        """
+
+rule combine_protein_dbs:
+    input:
+        ortho = rules.viridiplantae_orthodb.output,
+        fab = rules.download_uniprot_fabaceae_db.output
+    output:
+        f"{PROGRAM_RESOURCE_DIR}/allProteins.fasta"
+    shell:
+        """
+        cat {input.fab} {input.ortho} > {output}
+        """
+
 rule braker_protein:
     input:
-        proteins = rules.viridiplantae_orthodb.output,
+        proteins = rules.combine_protein_dbs.output,
         masked_genome = rules.repeat_masker.output.fasta,
     output:
         hints_protein = f"{ANNOTATION_DIR}/braker/proteins/hintsfile.gff",
         aug_hint_protein = f"{ANNOTATION_DIR}/braker/proteins/augustus.hints.gtf"
-    log: LOG_DIR + '/braker/braker_proteins.log'
+    log: LOG_DIR + '/braker/proteins.log'
     params:
         outputdir = f"{ANNOTATION_DIR}/braker/proteins",
         genemark=GENEMARK,
@@ -258,16 +280,26 @@ rule braker_protein:
             --species "Trifolium repens" 2> {log}
         """ 
 
+rule count_uniprot_seqs:
+    input:
+        rules.download_uniprot_fabaceae_db.output
+    output:
+        f"{ANNOTATION_DIR}/uniprotSeqs_byTaxon.txt"
+    conda: '../envs/notebooks.yaml'
+    log: LOG_DIR + '/notebooks/count_uniprot_seqs_processed.ipynb'
+    notebook:
+        "../notebooks/count_uniprot_seqs.py.ipynb"
+
 rule braker_rnaseq:
     input:
         masked_genome = rules.repeat_masker.output.fasta,
         Star_Bam = expand(rules.align_star.output, acc=ALL_RNASEQ_SAMPLES)
     output:
-        hints_rna = f"{ANNOTATION_DIR}/braker/braker_rnaseq/hintsfile.gff", 
-        aug_hint_rna = f"{ANNOTATION_DIR}/braker/braker_rnaseq/augustus.hints.gtf"
-    log: LOG_DIR + '/braker/braker_rnaseq.log'
+        hints_rna = f"{ANNOTATION_DIR}/braker/rnaseq/hintsfile.gff", 
+        aug_hint_rna = f"{ANNOTATION_DIR}/braker/rnaseq/augustus.hints.gtf"
+    log: LOG_DIR + '/braker/rnaseq.log'
     params:
-        outputdir = f"{ANNOTATION_DIR}/braker/braker_rnaseq",
+        outputdir = f"{ANNOTATION_DIR}/braker/rnaseq",
         genemark=GENEMARK
     threads: 20
     container: '/home/santang3/singularity_containers/braker3.sif'
