@@ -2,7 +2,7 @@
 resources: ../resources
 kooyers_rnaseq: /research/projects/trifolium/kooyers_rnaseq_data/raw_data
 TrR_five_fasta: /research/references/trifolium/repens/GCA_005869975.1_AgR_To_v5/GCA_005869975.1_AgR_To_v5_genomic.fna
-genemark: /home/santang3/downloads/gmes_linux_64_4 
+genemark: /home/santang3/downloads/gmes_linux_64_4
 prothint: /home/santang3/downloads/gmes_linux_64_4/ProtHint/bin
 
 # Output

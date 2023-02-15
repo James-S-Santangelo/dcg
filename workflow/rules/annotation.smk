@@ -261,9 +261,9 @@ rule braker_protein:
     log: LOG_DIR + '/braker/proteins.log'
     params:
         outputdir = f"{ANNOTATION_DIR}/braker/proteins",
-        genemark=GENEMARK,
-        prothint=PROTHINT
-    threads: 20
+        genemark = GENEMARK,
+        prothint = PROTHINT,
+    threads: 30
     container: '/home/santang3/singularity_containers/braker3.sif'
     resources:
         mem_mb = lambda wildcards, attempt: attempt * 10000,
@@ -273,11 +273,12 @@ rule braker_protein:
         braker.pl --genome {input.masked_genome} \
             --prot_seq {input.proteins} \
             --softmasking \
+            --useexisting \
             --GENEMARK_PATH {params.genemark} \
             --PROTHINT_PATH {params.prothint} \
             --threads {threads} \
             --workingdir {params.outputdir} \
-            --species "Trifolium repens" 2> {log}
+            --species "Trifolium repens prot" 2> {log}
         """ 
 
 rule count_uniprot_seqs:
@@ -301,7 +302,7 @@ rule braker_rnaseq:
     params:
         outputdir = f"{ANNOTATION_DIR}/braker/rnaseq",
         genemark=GENEMARK
-    threads: 20
+    threads: 30
     container: '/home/santang3/singularity_containers/braker3.sif'
     resources:
         mem_mb = lambda wildcards, attempt: attempt * 10000,
@@ -314,7 +315,7 @@ rule braker_rnaseq:
             --threads {threads} \
             --GENEMARK_PATH={params.genemark} \
             --workingdir {params.outputdir} \
-            --species "Trifolium repens" 2> {log} 
+            --species "Trifolium repens rna" 2> {log} 
         """
 
 rule tsebra_combine:
