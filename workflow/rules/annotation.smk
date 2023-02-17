@@ -256,8 +256,13 @@ rule braker_protein:
         proteins = rules.combine_protein_dbs.output,
         masked_genome = rules.repeat_masker.output.fasta,
     output:
-        hints_protein = f"{ANNOTATION_DIR}/braker/proteins/hintsfile.gff",
-        aug_hint_protein = f"{ANNOTATION_DIR}/braker/proteins/augustus.hints.gtf"
+        hints_prot = f"{ANNOTATION_DIR}/braker/proteins/hintsfile.gff",
+        aug_gtf = f"{ANNOTATION_DIR}/braker/proteins/Augustus/augustus.hints.gtf",
+        aug_cds = f"{ANNOTATION_DIR}/braker/proteins/Augustus/augustus.hints.codingseq",
+        aug_aa = f"{ANNOTATION_DIR}/braker/proteins/Augustus/augustus.hints.aa",
+        brk_gtf = f"{ANNOTATION_DIR}/braker/proteins/braker.gtf",
+        brk_cds = f"{ANNOTATION_DIR}/braker/proteins/braker.codingseq",
+        brk_aa = f"{ANNOTATION_DIR}/braker/proteins/braker.aa"
     log: LOG_DIR + '/braker/proteins.log'
     params:
         outputdir = f"{ANNOTATION_DIR}/braker/proteins",
@@ -291,13 +296,33 @@ rule count_uniprot_seqs:
     notebook:
         "../notebooks/count_uniprot_seqs.py.ipynb"
 
+rule merge_rnaseq_bams:
+    input:
+        Star_Bam = expand(rules.align_star.output, acc=ALL_RNASEQ_SAMPLES),
+    output:
+        bam = f"{ANNOTATION_DIR}/star/star_align/allBams_merged.bam",
+        bai = f"{ANNOTATION_DIR}/star/star_align/allBams_merged.bam.bai"
+    conda: '../envs/annotation.yaml'
+    threads: 8
+    log: LOG_DIR + '/merge_rnaseq_bams/bams_merge.log'
+    shell:
+        """
+        ( samtools merge -@ {threads} -r -o {output.bam} {input} &&\
+            samtools index {output.bam} ) 2> {log}
+        """
+
 rule braker_rnaseq:
     input:
         masked_genome = rules.repeat_masker.output.fasta,
-        Star_Bam = expand(rules.align_star.output, acc=ALL_RNASEQ_SAMPLES)
+        bam = rules.merge_rnaseq_bams.output.bam
     output:
-        hints_rna = f"{ANNOTATION_DIR}/braker/rnaseq/hintsfile.gff", 
-        aug_hint_rna = f"{ANNOTATION_DIR}/braker/rnaseq/augustus.hints.gtf"
+        hints_rna = f"{ANNOTATION_DIR}/braker/rnaseq/hintsfile.gff",
+        aug_gtf = f"{ANNOTATION_DIR}/braker/rnaseq/Augustus/augustus.hints.gtf",
+        aug_cds = f"{ANNOTATION_DIR}/braker/rnaseq/Augustus/augustus.hints.codingseq",
+        aug_aa = f"{ANNOTATION_DIR}/braker/rnaseq/Augustus/augustus.hints.aa",
+        brk_gtf = f"{ANNOTATION_DIR}/braker/rnaseq/braker.gtf",
+        brk_cds = f"{ANNOTATION_DIR}/braker/rnaseq/braker.codingseq",
+        brk_aa = f"{ANNOTATION_DIR}/braker/rnaseq/braker.aa"
     log: LOG_DIR + '/braker/rnaseq.log'
     params:
         outputdir = f"{ANNOTATION_DIR}/braker/rnaseq",
@@ -320,10 +345,10 @@ rule braker_rnaseq:
 
 rule tsebra_combine:
     input:
-        rna_aug = rules.braker_rnaseq.output.aug_hint_rna,
-        protein_aug = rules.braker_protein.output.aug_hint_protein,
+        rna_aug = rules.braker_rnaseq.output.aug_gtf,
+        protein_aug = rules.braker_protein.output.aug_gtf,
         hints_rna = rules.braker_rnaseq.output.hints_rna,
-        hints_protein = rules.braker_protein.output.hints_protein
+        hints_protein = rules.braker_protein.output.hints_prot
     output:
         braker_combined = f"{ANNOTATION_DIR}/braker/tsebra/braker_combined.gtf"
     log: LOG_DIR + '/braker/tsebra.log'

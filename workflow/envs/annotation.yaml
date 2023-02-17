@@ -9,3 +9,4 @@ dependencies:
   - perl-file-which=1.23
   - sra-tools=3.0.0
   - star=2.7.0b
+  - samtools=1.16.1
