@@ -11,8 +11,7 @@ rule configure_repbase:
         libdir = directory(f"{PROGRAM_RESOURCE_DIR}/Libraries"),
         dfam = f"{PROGRAM_RESOURCE_DIR}/Libraries/Dfam.h5",
         rm = f"{PROGRAM_RESOURCE_DIR}/Libraries/RepeatMaskerLib.h5"
-    #container: 'docker://dfam/tetools:1.6'
-    container: '/home/santang3/scratch/dovetail/dcg/resources/tetools_1.6.sif'
+    container: 'docker://dfam/tetools:1.6'
     log: LOG_DIR + '/configure_repbase/configure_repbase.log'
     params:
         untar_dir = f"{PROGRAM_RESOURCE_DIR}"
@@ -29,8 +28,7 @@ rule build_repeat_modeler_db:
         rules.create_reference_assemblies.output
     output:
         multiext(f"{ANNOTATION_DIR}/repeat_modeler/rmdb", '.nhr', '.nin', '.nnd', '.nni', '.nog', '.nsq', '.translation')
-    #container: 'docker://dfam/tetools:1.6'
-    container: '/home/santang3/scratch/dovetail/dcg/resources/tetools_1.6.sif'
+    container: 'docker://dfam/tetools:1.6'
     log: LOG_DIR + '/build_repeat_modeler_db/rmdb.log'
     params:
         out = f"{ANNOTATION_DIR}/repeat_modeler/rmdb"
@@ -192,7 +190,7 @@ rule align_star:
     input:
         unpack(get_star_align_input_files)
     output:
-        star_align = f"{ANNOTATION_DIR}/star/star_align/{{acc}}/{{acc}}_Aligned.sortedByCoord.out.bam" 
+        star_align = temp(f"{ANNOTATION_DIR}/star/star_align/{{acc}}/{{acc}}_Aligned.sortedByCoord.out.bam") 
     log: LOG_DIR + '/star/{acc}_star_align.log'
     conda:'../envs/annotation.yaml'
     params:
@@ -256,23 +254,13 @@ rule braker_protein:
         proteins = rules.combine_protein_dbs.output,
         masked_genome = rules.repeat_masker.output.fasta,
     output:
-        hints_prot = f"{ANNOTATION_DIR}/braker/proteins/hintsfile.gff",
-        aug_gtf = f"{ANNOTATION_DIR}/braker/proteins/Augustus/augustus.hints.gtf",
-        aug_cds = f"{ANNOTATION_DIR}/braker/proteins/Augustus/augustus.hints.codingseq",
-        aug_aa = f"{ANNOTATION_DIR}/braker/proteins/Augustus/augustus.hints.aa",
-        brk_gtf = f"{ANNOTATION_DIR}/braker/proteins/braker.gtf",
-        brk_cds = f"{ANNOTATION_DIR}/braker/proteins/braker.codingseq",
-        brk_aa = f"{ANNOTATION_DIR}/braker/proteins/braker.aa"
+        directory(f"{ANNOTATION_DIR}/braker/proteins")
     log: LOG_DIR + '/braker/proteins.log'
     params:
-        outputdir = f"{ANNOTATION_DIR}/braker/proteins",
         genemark = GENEMARK,
         prothint = PROTHINT,
     threads: 30
     container: '/home/santang3/singularity_containers/braker3.sif'
-    resources:
-        mem_mb = lambda wildcards, attempt: attempt * 10000,
-        time = '06:00:00'
     shell:
         """
         braker.pl --genome {input.masked_genome} \
@@ -282,7 +270,7 @@ rule braker_protein:
             --GENEMARK_PATH {params.genemark} \
             --PROTHINT_PATH {params.prothint} \
             --threads {threads} \
-            --workingdir {params.outputdir} \
+            --workingdir {output} \
             --species "Trifolium repens prot" 2> {log}
         """ 
 
@@ -316,39 +304,29 @@ rule braker_rnaseq:
         masked_genome = rules.repeat_masker.output.fasta,
         bam = rules.merge_rnaseq_bams.output.bam
     output:
-        hints_rna = f"{ANNOTATION_DIR}/braker/rnaseq/hintsfile.gff",
-        aug_gtf = f"{ANNOTATION_DIR}/braker/rnaseq/Augustus/augustus.hints.gtf",
-        aug_cds = f"{ANNOTATION_DIR}/braker/rnaseq/Augustus/augustus.hints.codingseq",
-        aug_aa = f"{ANNOTATION_DIR}/braker/rnaseq/Augustus/augustus.hints.aa",
-        brk_gtf = f"{ANNOTATION_DIR}/braker/rnaseq/braker.gtf",
-        brk_cds = f"{ANNOTATION_DIR}/braker/rnaseq/braker.codingseq",
-        brk_aa = f"{ANNOTATION_DIR}/braker/rnaseq/braker.aa"
+        directory(f"{ANNOTATION_DIR}/braker/rnaseq")
     log: LOG_DIR + '/braker/rnaseq.log'
     params:
         outputdir = f"{ANNOTATION_DIR}/braker/rnaseq",
         genemark=GENEMARK
     threads: 30
     container: '/home/santang3/singularity_containers/braker3.sif'
-    resources:
-        mem_mb = lambda wildcards, attempt: attempt * 10000,
-        time = '06:00:00'
     shell:
         """
         braker.pl --genome {input.masked_genome} \
-            --bam {input.Star_Bam} \
+            --bam {input.bam} \
             --softmasking \
+            --useexisting \
             --threads {threads} \
             --GENEMARK_PATH={params.genemark} \
-            --workingdir {params.outputdir} \
+            --workingdir {output} \
             --species "Trifolium repens rna" 2> {log} 
         """
 
 rule tsebra_combine:
     input:
-        rna_aug = rules.braker_rnaseq.output.aug_gtf,
-        protein_aug = rules.braker_protein.output.aug_gtf,
-        hints_rna = rules.braker_rnaseq.output.hints_rna,
-        hints_protein = rules.braker_protein.output.hints_prot
+        rules.braker_protein.output,
+        rules.braker_rnaseq.output
     output:
         braker_combined = f"{ANNOTATION_DIR}/braker/tsebra/braker_combined.gtf"
     log: LOG_DIR + '/braker/tsebra.log'
