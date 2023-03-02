@@ -188,7 +188,9 @@ rule build_star:
 
 rule align_star:
     input:
-        unpack(get_star_align_input_files)
+        star_build = rules.build_star.output,
+        R1 = rules.gzip_fastq.output.R1,
+        R2 = rules.gzip_fastq.output.R2
     output:
         star_align = temp(f"{ANNOTATION_DIR}/star/star_align/{{acc}}/{{acc}}_Aligned.sortedByCoord.out.bam") 
     log: LOG_DIR + '/star/{acc}_star_align.log'
@@ -207,6 +209,7 @@ rule align_star:
             --genomeDir {input.star_build} \
             --runThreadN {threads} \
             --readFilesCommand zcat \
+            --alignIntronMax 10000 \
             --outFileNamePrefix {params.out} &> {log} 
         """
 
@@ -260,7 +263,7 @@ rule braker_protein:
         genemark = GENEMARK,
         prothint = PROTHINT,
     threads: 30
-    container: '/home/santang3/singularity_containers/braker3.sif'
+    container: 'docker://teambraker/braker3' 
     shell:
         """
         braker.pl --genome {input.masked_genome} \
@@ -286,12 +289,12 @@ rule count_uniprot_seqs:
 
 rule merge_rnaseq_bams:
     input:
-        Star_Bam = expand(rules.align_star.output, acc=ALL_RNASEQ_SAMPLES),
+        Star_Bam = expand(rules.align_star.output, acc=RNASEQ_ACCESSIONS),
     output:
-        bam = f"{ANNOTATION_DIR}/star/star_align/allBams_merged.bam",
-        bai = f"{ANNOTATION_DIR}/star/star_align/allBams_merged.bam.bai"
+        bam = f"{ANNOTATION_DIR}/star/allBams_merged.bam",
+        bai = f"{ANNOTATION_DIR}/star/allBams_merged.bam.bai"
     conda: '../envs/annotation.yaml'
-    threads: 8
+    threads: 30
     log: LOG_DIR + '/merge_rnaseq_bams/bams_merge.log'
     shell:
         """
@@ -310,7 +313,7 @@ rule braker_rnaseq:
         outputdir = f"{ANNOTATION_DIR}/braker/rnaseq",
         genemark=GENEMARK
     threads: 30
-    container: '/home/santang3/singularity_containers/braker3.sif'
+    container: 'docker://teambraker/braker3' 
     shell:
         """
         braker.pl --genome {input.masked_genome} \
@@ -326,25 +329,71 @@ rule braker_rnaseq:
 rule tsebra_combine:
     input:
         rules.braker_protein.output,
-        rules.braker_rnaseq.output
+        rules.braker_rnaseq.output,
+        config = '../config/tsebra.cfg',
+        rna_aug = f"{rules.braker_rnaseq.output[0]}/Augustus/augustus.hints.gtf",
+        prot_aug = f"{rules.braker_protein.output[0]}/Augustus/augustus.hints.gtf",
+        hints_rna= f"{rules.braker_rnaseq.output[0]}/hintsfile.gff",
+        hints_prot = f"{rules.braker_protein.output[0]}/hintsfile.gff",
     output:
         braker_combined = f"{ANNOTATION_DIR}/braker/tsebra/braker_combined.gtf"
     log: LOG_DIR + '/braker/tsebra.log'
-    container: '/home/santang3/singularity_containers/braker3.sif'
-    resources:
-        mem_mb = lambda wildcards, attempt: attempt * 10000,
-        time = '06:00:00'
+    container: 'docker://teambraker/braker3' 
     shell:
         """
-        tesbra.py -g {input.rna_aug},{input.protein_aug} \
-            -c default.cfg \
-            -e {input.hints_rna},{input.hints_protein} \
+        tsebra.py -g {input.rna_aug},{input.prot_aug} \
+            -c {input.config} \
+            -e {input.hints_rna},{input.hints_prot} \
             -o {output} 2> {log} 
+        """ 
+
+rule rename_tsebra_gtf:
+    input:
+        rules.tsebra_combine.output
+    output:
+        gtf = f"{ANNOTATION_DIR}/braker/tsebra/braker_combined_renamed.gtf",
+        tab = f"{ANNOTATION_DIR}/braker/tsebra/tsebra_rename_translationTab.txt"
+    log: LOG_DIR + '/braker/rename_gtf.log'
+    container: 'docker://teambraker/braker3'
+    shell:
+        """
+        rename_gtf.py --gtf {input} \
+            --prefix TrR_v6 \
+            --translation_tab {output.tab} \
+            --out {output.gtf} 2> {log} 
+        """
+
+rule addUTRs:
+    input:
+        masked_genome = rules.repeat_masker.output.fasta,
+        rna_bam = rules.merge_rnaseq_bams.output.bam,
+        hints = rules.rename_tsebra_gtf.output.gtf
+    output:
+        f"{ANNOTATION_DIR}/braker/gushr/TrR_v6_brakerCombined_tsebraRenamed_withUTRs.gtf"
+    log: LOG_DIR + '/braker/gushr_addUTRs.log'
+    params:
+        tmp = f"{config['results_prefix']}/tmp/",
+        out = f"{ANNOTATION_DIR}/braker/gushr/TrR_v6_brakerCombined_tsebraRenamed_withUTRs",
+        gemoma = f"{config['results_prefix']}/tmp/GeMoMa-1.6.2.jar"
+    container: 'library://james-s-santangelo/gushr/gushr:v1.0.0'
+    threads: 10
+    shell:
+        """
+        mkdir -p {params.tmp}
+        cp /opt/GUSHR/GeMoMa-1.6.2.jar {params.gemoma}
+        gushr.py  -t {input.hints} \
+            -b {input.rna_bam} \
+            -g {input.masked_genome} \
+            -o {params.out} \
+            -q 1 \
+            -c {threads} \
+            -d {params.tmp} \
+            --GeMoMaJar {params.gemoma}
         """ 
 
 rule annotation_done:
     input:
-        expand(rules.tsebra_combine.output)
+        expand(rules.addUTRs.output)
     output:
         f"{ANNOTATION_DIR}/annotation.done"
     shell:
