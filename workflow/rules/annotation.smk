@@ -45,8 +45,7 @@ rule repeat_modeler:
         fasta = f"{ANNOTATION_DIR}/repeat_modeler/rmdb-families.fa",
         stk = f"{ANNOTATION_DIR}/repeat_modeler/rmdb-families.stk"
     threads: 48
-    #container: 'docker://dfam/tetools:1.6'
-    container: '/home/santang3/scratch/dovetail/dcg/resources/tetools_1.6.sif'
+    container: 'docker://dfam/tetools:1.6'
     log: LOG_DIR + '/repeat_modeler/rm.log'
     params:
         db_base = lambda wildcards, input: os.path.splitext(input[0])[0]
@@ -63,8 +62,7 @@ rule merge_repeat_databases:
         tr_db = rules.repeat_modeler.output.fasta
     output:
         f"{PROGRAM_RESOURCE_DIR}/Libraries/rm_merged_db.fasta"
-    #container: 'docker://dfam/tetools:1.6'
-    container: '/home/santang3/scratch/dovetail/dcg/resources/tetools_1.6.sif'
+    container: 'docker://dfam/tetools:1.6'
     log: LOG_DIR + '/merge_repeat_databases/merge_repeat_databases.log'
     params:
         rm_db_fasta = f"{PROGRAM_RESOURCE_DIR}/Libraries/rm_db.fasta"
@@ -89,8 +87,7 @@ rule repeat_masker:
         gff = f"{ANNOTATION_DIR}/repeat_masker/TrR_v6_haploid_reference_repeatMasker.gff",
         stats = f"{ANNOTATION_DIR}/repeat_masker/TrR_v6_haploid_reference_repeatMasker.tbl"
     threads: 48
-    #container: 'docker://dfam/tetools:1.6'
-    container: '/home/santang3/scratch/dovetail/dcg/resources/tetools_1.6.sif'
+    container: 'docker://dfam/tetools:1.6'
     log: LOG_DIR + '/repeat_masker/repeat_masker.log'
     params:
         outdir = f"{ANNOTATION_DIR}/repeat_masker/"
