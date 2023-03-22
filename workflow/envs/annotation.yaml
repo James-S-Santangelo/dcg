@@ -10,3 +10,4 @@ dependencies:
   - sra-tools=3.0.0
   - star=2.7.0b
   - samtools=1.16.1
+  - gff3sort=0.1.a1a2bc9

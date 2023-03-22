@@ -418,9 +418,21 @@ rule gtf_to_gff:
             --output {output} &> {log}
         """
 
+rule gff_sort:
+    input:
+        rules.gtf_to_gff.output
+    output:
+        f"{ANNOTATION_DIR}/TrR_v6_structural_sorted.gff"
+    log: LOG_DIR + '/gff_sort/gff_sort.log'
+    conda: '../envs/annotation.yaml'
+    shell:
+        """
+        gff3sort.pl {input} > {output} 2> {log}
+        """
+
 rule annotation_done:
     input:
-        expand(rules.gtf_to_gff.output)
+        expand(rules.gff_sort.output)
     output:
         f"{ANNOTATION_DIR}/annotation.done"
     shell:
