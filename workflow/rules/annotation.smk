@@ -386,11 +386,41 @@ rule addUTRs:
             -c {threads} \
             -d {params.tmp} \
             --GeMoMaJar {params.gemoma}
-        """ 
+        """
+
+rule clean_gushr_gtf:
+    input:
+        rules.addUTRs.output
+    output:
+        f"{ANNOTATION_DIR}/braker/gushr/TrR_v6_brakerCombined_tsebraRenamed_withUTRs_cleaned.gtf"
+    run:
+        with open(input[0], 'r') as fin:
+            with open(output[0], 'w') as fout:
+                lines = fin.readlines()
+                for l in lines:
+                    sl = l.split('\t')
+                    ssl = list(map(str.strip, sl))
+                    ssl_3pr = ["three_prime_utr" if x=="3'-UTR" else x for x in ssl]
+                    ssl_5pr = ["five_prime_utr" if x=="5'-UTR" else x for x in ssl_3pr]
+                    nssl = "\t".join(ssl_5pr)
+                    fout.write(f"{nssl}\n") 
+
+rule gtf_to_gff:
+    input:
+        rules.clean_gushr_gtf.output
+    output:
+        f"{ANNOTATION_DIR}/TrR_v6_structural.gff"
+    container: 'docker://quay.io/biocontainers/agat:1.0.0--pl5321hdfd78af_0'
+    log: LOG_DIR + '/gtf_to_gff/gtf_to_gff.log'
+    shell:
+        """
+        agat_convert_sp_gxf2gxf.pl --gtf {input} \
+            --output {output} &> {log}
+        """
 
 rule annotation_done:
     input:
-        expand(rules.addUTRs.output)
+        expand(rules.gtf_to_gff.output)
     output:
         f"{ANNOTATION_DIR}/annotation.done"
     shell:
