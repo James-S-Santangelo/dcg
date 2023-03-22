@@ -405,6 +405,10 @@ rule clean_gushr_gtf:
                     nssl = "\t".join(ssl_5pr)
                     fout.write(f"{nssl}\n") 
 
+###############################
+#### CLEAN & TRANSFORM GTF ####
+###############################
+
 rule gtf_to_gff:
     input:
         rules.clean_gushr_gtf.output
@@ -430,9 +434,22 @@ rule gff_sort:
         gff3sort.pl {input} > {output} 2> {log}
         """
 
+rule get_proteins:
+    input:
+        gff = rules.gff_sort.output,
+        ref = rules.repeat_masker.output.fasta
+    output:
+        f"{ANNOTATION_DIR}/TrR_v6_proteins.fasta"
+    log: LOG_DIR + '/get_proteins/get_proteins.log'
+    container: 'docker://teambraker/braker3'
+    shell:
+        """
+        gffread -E -y {output} -g {input.ref} {input.gff} 2> {log}
+        """
+
 rule annotation_done:
     input:
-        expand(rules.gff_sort.output)
+        expand(rules.get_proteins.output)
     output:
         f"{ANNOTATION_DIR}/annotation.done"
     shell:
