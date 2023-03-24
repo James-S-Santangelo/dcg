@@ -210,9 +210,9 @@ rule align_star:
             --outFileNamePrefix {params.out} &> {log} 
         """
 
-################
-#### BRAKER ####
-################
+###############################
+#### STRUCTURAL ANNOTATION ####
+###############################
 
 rule viridiplantae_orthodb:
     output:
@@ -445,6 +445,30 @@ rule get_proteins:
     shell:
         """
         gffread -E -y {output} -g {input.ref} {input.gff} 2> {log}
+        """
+
+###############################
+#### FUCNTIONAL ANNOTATION ####
+###############################
+
+rule download_interproscan_db:
+    output:
+        db = directory(f"{PROGRAM_RESOURCE_DIR}/interproscan/interproscan-5.51-85.0"),
+        done = f'{PROGRAM_RESOURCE_DIR}/interproscan/db_download_successful'
+    params:
+        outdir = f"{PROGRAM_RESOURCE_DIR}/interproscan/",
+        dbtar = "interproscan-data-5.51-85.0.tar.gz",
+        md5 = "interproscan-data-5.51-85.0.tar.gz.md5",
+        db_url = 'ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.51-85.0/alt/interproscan-data-5.51-85.0.tar.gz',
+        md5_url = 'ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.51-85.0/alt/interproscan-data-5.51-85.0.tar.gz.md5'
+    shell:
+        """
+        wget {params.db_url}
+        wget {params.md5_url}
+
+        md5sum -c {params.md5} && touch {output.done} &&
+        tar -pxvzf {params.dbtar} -C {params.outdir} &&
+        rm {params.dbtar} {params.md5}
         """
 
 rule annotation_done:
