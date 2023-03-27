@@ -448,32 +448,36 @@ rule get_proteins:
         """
 
 ###############################
-#### FUCNTIONAL ANNOTATION ####
+#### FUNCTIONAL ANNOTATION ####
 ###############################
 
-rule download_interproscan_db:
+rule run_interproscan:
+    input:
+        data = IPRSCAN_DATA,
+        prot = rules.get_proteins.output
     output:
-        db = directory(f"{PROGRAM_RESOURCE_DIR}/interproscan/interproscan-5.51-85.0"),
-        done = f'{PROGRAM_RESOURCE_DIR}/interproscan/db_download_successful'
+        gff =  f"{ANNOTATION_DIR}/interproscan/TrR_v6_interproscan.gff3",
+        xml =  f"{ANNOTATION_DIR}/interproscan/TrR_v6_interproscan.xml"
+    log: LOG_DIR + '/interproscan/run_interproscan.log'
+    threads: 32
     params:
-        outdir = f"{PROGRAM_RESOURCE_DIR}/interproscan/",
-        dbtar = "interproscan-data-5.51-85.0.tar.gz",
-        md5 = "interproscan-data-5.51-85.0.tar.gz.md5",
-        db_url = 'ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.51-85.0/alt/interproscan-data-5.51-85.0.tar.gz',
-        md5_url = 'ftp://ftp.ebi.ac.uk/pub/software/unix/iprscan/5/5.51-85.0/alt/interproscan-data-5.51-85.0.tar.gz.md5'
+        out_base =  f"{ANNOTATION_DIR}/interproscan/TrR_v6_interproscan"
+    container: 'library://James-S-Santangelo/interproscan/interproscan:5.61-93.0' 
     shell:
         """
-        wget {params.db_url}
-        wget {params.md5_url}
-
-        md5sum -c {params.md5} && touch {output.done} &&
-        tar -pxvzf {params.dbtar} -C {params.outdir} &&
-        rm {params.dbtar} {params.md5}
-        """
+        interproscan.sh -i {input.prot} \
+            -b {params.out_base} \
+            -f xml,gff3 \
+            -goterms \
+            --pathways \
+            --seqtype p \
+            --cpu {threads} \
+            --verbose &> {log} 
+        """ 
 
 rule annotation_done:
     input:
-        expand(rules.get_proteins.output)
+        expand(rules.run_interproscan.output)
     output:
         f"{ANNOTATION_DIR}/annotation.done"
     shell:

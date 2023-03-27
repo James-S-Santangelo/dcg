@@ -6,3 +6,6 @@ circos/
 RM_*
 *Cache*
 resources/RepBaseRepeatMaskerEdition-20181026.tar.gz
+interproscan-*5.61-93.0*
+.gm_key
+.augustus
