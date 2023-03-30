@@ -462,7 +462,7 @@ rule run_interproscan:
     threads: 32
     params:
         out_base =  f"{ANNOTATION_DIR}/interproscan/TrR_v6_interproscan"
-    container: 'library://James-S-Santangelo/interproscan/interproscan:5.61-93.0' 
+    container: 'library://james-s-santangelo/interproscan/interproscan:5.61-93.0' 
     shell:
         """
         interproscan.sh -i {input.prot} \
@@ -475,9 +475,89 @@ rule run_interproscan:
             --verbose &> {log} 
         """ 
 
+rule funannotate_setup:
+    output:
+        directory(f"{ANNOTATION_DIR}/funannotate/fun_db")
+    log: LOG_DIR + '/funannotate/funannotate_setup.log'
+    container: '/home/santang3/singularity_containers/funannotate.sif'
+    shell:
+        """
+        funannotate setup --database {output} -b embryophyta --force 2> {log}
+        """
+
+rule feature_recode:
+    input:
+        rules.gff_sort.output
+    output:
+        f"{ANNOTATION_DIR}/TrR_v6_structural_sorted_featureRecode.gff"
+    shell:
+        """
+        awk 'BEGIN{{FS=OFS="\t"}} {{gsub(/transcript/, "mRNA", $3)}} 1' {input} > {output}
+        """
+
+
+rule dl_eggnog_db:
+    output:
+        directory(f"{ANNOTATION_DIR}/eggnog/eggnog_db")
+    conda: '../envs/eggnog.yaml'
+    shell:
+        """
+        mkdir -p {output}
+        download_eggnog_data.py -y --data_dir {output} 
+        """
+
+rule run_eggnog_mapper:
+    input:
+        prot = rules.get_proteins.output,
+        db = rules.dl_eggnog_db.output
+    output:
+        annot = f"{ANNOTATION_DIR}/eggnog/TrR_v6.emapper.annotations"
+    log: LOG_DIR + '/eggnog/aggnog_mapper.log'
+    threads: 24
+    conda: '../envs/eggnog.yaml'
+    params:
+        out = f"{ANNOTATION_DIR}/eggnog/TrR_v6"
+    shell:
+        """
+        emapper.py -i {input.prot} \
+            --data_dir {input.db} \
+            --cpu {threads} \
+            --itype proteins \
+            -o {params.out} \
+            --override &> {log}
+
+        """
+
+rule funannotate_annotate:
+    input:
+        enm = rules.run_eggnog_mapper.output.annot,
+        gff = rules.feature_recode.output,
+        ref = rules.repeat_masker.output.fasta,
+        iprs = rules.run_interproscan.output.xml,
+        db = rules.funannotate_setup.output 
+    output:
+        directory(f"{ANNOTATION_DIR}/funannotate/annotations")
+    log: LOG_DIR + '/funannotate/funannotate_annotate.log'
+    container: '/home/santang3/singularity_containers/funannotate.sif'
+    threads: 24
+    shell:
+        """
+        funannotate annotate \
+            --gff {input.gff} \
+            --fasta {input.ref} \
+            --species "Trifolium repens" \
+            --out {output} \
+            --iprscan {input.iprs} \
+            --eggnog {input.enm} \
+            --force \
+            --database {input.db} \
+            --busco_db embryophyta \
+            --cpus {threads} 2> {log}
+        """
+
 rule annotation_done:
     input:
-        expand(rules.run_interproscan.output)
+        expand(rules.funannotate_annotate.output)
     output:
         f"{ANNOTATION_DIR}/annotation.done"
     shell:
