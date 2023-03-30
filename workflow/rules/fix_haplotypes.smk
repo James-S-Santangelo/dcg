@@ -10,7 +10,7 @@ rule fix_haplotypes:
     log: LOG_DIR + '/notebooks/fix_haplotypes_processed.ipynb'
     conda: '../envs/notebooks.yaml'
     notebook:
-        "../notebooks/fix_haplotypes.py.ipynb"
+        "../notebooks/fix_assembly_issues.py.ipynb"
 
 rule revised_haplotypes_done:
     input:
