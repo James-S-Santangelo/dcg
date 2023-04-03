@@ -25,6 +25,7 @@ IPRSCAN_DATA = f"{RESOURCES}/interproscan-5.61-93.0/data"
 ORGANELLE_SEQS = f"{RESOURCES}/organelles/organelle_seqs.fasta"
 TRR_FIVE_SCAFFS = f"{RESOURCES}/TrR_v5_scaff_byLG.csv"
 TRR_FIVE_FASTA = config['TrR_five_fasta']
+NCBI_TEMPLATE = f"{RESOURCES}/ncbi_template.sbt" 
 
 RNASEQ_ACCESSIONS = pd.read_csv(f"{RESOURCES}/Trepens_rnaseq_accessions_select.txt", sep = '\t')['accession'].tolist()
 KOOYERS_RNASEQ = [f for f in os.listdir(config['kooyers_rnaseq']) if f.startswith('TR')]

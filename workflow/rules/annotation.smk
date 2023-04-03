@@ -539,10 +539,14 @@ rule funannotate_annotate:
         directory(f"{ANNOTATION_DIR}/funannotate/annotations")
     log: LOG_DIR + '/funannotate/funannotate_annotate.log'
     container: '/home/santang3/singularity_containers/funannotate.sif'
-    threads: 24
+    threads: 32
+    params:
+        sbt = NCBI_TEMPLATE,
+        locus_tag = 'P8452'
     shell:
         """
         funannotate annotate \
+            --sbt {params.sbt} \
             --gff {input.gff} \
             --fasta {input.ref} \
             --species "Trifolium repens" \
@@ -550,6 +554,7 @@ rule funannotate_annotate:
             --iprscan {input.iprs} \
             --eggnog {input.enm} \
             --force \
+            --rename {params.locus_tag} \
             --database {input.db} \
             --busco_db embryophyta \
             --cpus {threads} 2> {log}
