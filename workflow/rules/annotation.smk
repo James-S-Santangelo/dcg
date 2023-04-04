@@ -25,7 +25,7 @@ rule configure_repbase:
 
 rule build_repeat_modeler_db:
     input:
-        rules.create_reference_assemblies.output
+        rules.create_reference_assemblies.output[0]
     output:
         multiext(f"{ANNOTATION_DIR}/repeat_modeler/rmdb", '.nhr', '.nin', '.nnd', '.nni', '.nog', '.nsq', '.translation')
     container: 'docker://dfam/tetools:1.6'
