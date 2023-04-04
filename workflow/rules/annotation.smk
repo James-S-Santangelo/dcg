@@ -525,7 +525,6 @@ rule run_eggnog_mapper:
             --itype proteins \
             -o {params.out} \
             --override &> {log}
-
         """
 
 rule funannotate_annotate:
@@ -538,7 +537,7 @@ rule funannotate_annotate:
     output:
         directory(f"{ANNOTATION_DIR}/funannotate/annotations")
     log: LOG_DIR + '/funannotate/funannotate_annotate.log'
-    container: '/home/santang3/singularity_containers/funannotate.sif'
+    container: 'docker://nextgenusfs/funannotate:latest'
     threads: 32
     params:
         sbt = NCBI_TEMPLATE,
