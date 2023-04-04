@@ -56,8 +56,7 @@ rule all:
         f'{MINIMAP_DIR}/minimap.done',
         f'{REFERENCE_ASSEMBLIES_DIR}/reference_assemblies.done',
         f"{ANNOTATION_DIR}/annotation.done",
-        f'{QC_DIR}/qc.done',
-        f"{REVISED_HAP_DIR}/revised_haplotypes.done"
+        f'{QC_DIR}/qc.done'
 
 include: 'rules/minimap.smk'
 include: 'rules/blast.smk'
