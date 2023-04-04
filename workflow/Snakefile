@@ -60,8 +60,7 @@ rule all:
         f"{REVISED_HAP_DIR}/revised_haplotypes.done"
 
 include: 'rules/minimap.smk'
-include: 'rules/fix_haplotypes.smk'
 include: 'rules/blast.smk'
-include: 'rules/qc.smk'
 include: 'rules/assemble_references.smk'
 include: 'rules/annotation.smk'
+include: 'rules/qc.smk'
