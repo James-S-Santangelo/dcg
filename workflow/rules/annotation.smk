@@ -79,7 +79,7 @@ rule merge_repeat_databases:
 rule repeat_masker:
     input:
         lib = rules.merge_repeat_databases.output,
-        fasta = rules.create_reference_assemblies.output
+        fasta = rules.create_reference_assemblies.output[0]
     output:
         fasta = f"{ANNOTATION_DIR}/repeat_masker/TrR_v6_haploid_reference_softMasked.fasta",
         cat = f"{ANNOTATION_DIR}/repeat_masker/TrR_v6_haploid_reference_repeatMasker.cat.gz",
