@@ -61,7 +61,6 @@ rule run_busco:
             --cpu {threads} &> {log}
         """
 
-
 rule qc_done:
     input:
         rules.quast_haploid_ref.output,

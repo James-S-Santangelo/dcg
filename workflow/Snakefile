@@ -42,6 +42,7 @@ PROGRAM_RESOURCE_DIR = f"{config['results_prefix']}/program_resources"
 REFERENCE_ASSEMBLIES_DIR = f"{config['results_prefix']}/reference_assemblies"
 QC_DIR = f"{config['results_prefix']}/qc"
 REVISED_HAP_DIR = f"{config['results_prefix']}/revised_haplotypes"
+NCBI_DIR = f"{config['results_prefix']}/ncbi"
 
 HAP_VS_HAP = [f'{i}-{j}' for i in HAPS for j in HAPS if i != j]
 
@@ -56,10 +57,40 @@ rule all:
         f'{MINIMAP_DIR}/minimap.done',
         f'{REFERENCE_ASSEMBLIES_DIR}/reference_assemblies.done',
         f"{ANNOTATION_DIR}/annotation.done",
-        f'{QC_DIR}/qc.done'
+        f'{QC_DIR}/qc.done',
+        f"{NCBI_DIR}/haploid/UTM_Trep_v1.0.scaffolds.fa"
 
 include: 'rules/minimap.smk'
 include: 'rules/blast.smk'
 include: 'rules/assemble_references.smk'
 include: 'rules/annotation.smk'
 include: 'rules/qc.smk'
+
+rule collect_haploid_ref_files:
+    input:
+       fasta = f"{rules.funannotate_annotate.output}/annotate_results/Trifolium_repens.scaffolds.fa", 
+       prot = f"{rules.funannotate_annotate.output}/annotate_results/Trifolium_repens.proteins.fa", 
+       gff3 = f"{rules.funannotate_annotate.output}/annotate_results/Trifolium_repens.gff3", 
+       agp = f"{rules.funannotate_annotate.output}/annotate_results/Trifolium_repens.agp", 
+       gbk = f"{rules.funannotate_annotate.output}/annotate_results/Trifolium_repens.gbk", 
+       tbl = f"{rules.funannotate_annotate.output}/annotate_results/Trifolium_repens.tbl"
+    output:
+       fasta = f"{NCBI_DIR}/haploid/UTM_Trep_v1.0.scaffolds.fa", 
+       prot = f"{NCBI_DIR}/haploid/UTM_Trep_v1.0.proteins.fa", 
+       gff3 = f"{NCBI_DIR}/haploid/UTM_Trep_v1.0.gff3", 
+       agp = f"{NCBI_DIR}/haploid/UTM_Trep_v1.0.agp", 
+       gbk = f"{NCBI_DIR}/haploid/UTM_Trep_v1.0.gbk", 
+       tbl = f"{NCBI_DIR}/haploid/UTM_Trep_v1.0.tbl"
+    shell:
+        """
+        cp {input.fasta} {output.fasta}
+        cp {input.prot} {output.prot}
+        cp {input.gff3} {output.gff3}
+        cp {input.agp} {output.agp}
+        cp {input.gbk} {output.gbk}
+        cp {input.tbl} {output.tbl}
+        """
+        
+
+
+
