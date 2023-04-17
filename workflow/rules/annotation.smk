@@ -202,6 +202,7 @@ rule align_star:
         """
         STAR --readFilesIn {input.R1} {input.R2} \
             --outSAMtype BAM SortedByCoordinate \
+            --outSAMstrandField intronMotif \
             --twopassMode Basic \
             --genomeDir {input.star_build} \
             --runThreadN {threads} \
@@ -249,31 +250,6 @@ rule combine_protein_dbs:
         cat {input.fab} {input.ortho} > {output}
         """
 
-rule braker_protein:
-    input:
-        proteins = rules.combine_protein_dbs.output,
-        masked_genome = rules.repeat_masker.output.fasta,
-    output:
-        directory(f"{ANNOTATION_DIR}/braker/proteins")
-    log: LOG_DIR + '/braker/proteins.log'
-    params:
-        genemark = GENEMARK,
-        prothint = PROTHINT,
-    threads: 30
-    container: 'docker://teambraker/braker3' 
-    shell:
-        """
-        braker.pl --genome {input.masked_genome} \
-            --prot_seq {input.proteins} \
-            --softmasking \
-            --useexisting \
-            --GENEMARK_PATH {params.genemark} \
-            --PROTHINT_PATH {params.prothint} \
-            --threads {threads} \
-            --workingdir {output} \
-            --species "Trifolium repens prot" 2> {log}
-        """ 
-
 rule count_uniprot_seqs:
     input:
         rules.download_uniprot_fabaceae_db.output
@@ -299,111 +275,33 @@ rule merge_rnaseq_bams:
             samtools index {output.bam} ) 2> {log}
         """
 
-rule braker_rnaseq:
+rule braker:
     input:
+        proteins = rules.combine_protein_dbs.output,
         masked_genome = rules.repeat_masker.output.fasta,
         bam = rules.merge_rnaseq_bams.output.bam
-    output:
-        directory(f"{ANNOTATION_DIR}/braker/rnaseq")
-    log: LOG_DIR + '/braker/rnaseq.log'
-    params:
-        outputdir = f"{ANNOTATION_DIR}/braker/rnaseq",
-        genemark=GENEMARK
+    output: 
+        directory(f"{ANNOTATION_DIR}/braker")
+    log: LOG_DIR + '/braker/braker.log'
+    container: 'docker://teambraker/braker3:v.1.0.3'
     threads: 30
-    container: 'docker://teambraker/braker3' 
+    params:
+        genemark = GENEMARK,
+        prothint = PROTHINT
     shell:
         """
         braker.pl --genome {input.masked_genome} \
+            --prot_seq {input.proteins} \
             --bam {input.bam} \
             --softmasking \
             --useexisting \
+            --gff3 \
+            --GENEMARK_PATH {params.genemark} \
+            --PROTHINT_PATH {params.prothint} \
             --threads {threads} \
-            --GENEMARK_PATH={params.genemark} \
             --workingdir {output} \
-            --species "Trifolium repens rna" 2> {log} 
-        """
-
-rule tsebra_combine:
-    input:
-        rules.braker_protein.output,
-        rules.braker_rnaseq.output,
-        config = '../config/tsebra.cfg',
-        rna_aug = f"{rules.braker_rnaseq.output[0]}/Augustus/augustus.hints.gtf",
-        prot_aug = f"{rules.braker_protein.output[0]}/Augustus/augustus.hints.gtf",
-        hints_rna= f"{rules.braker_rnaseq.output[0]}/hintsfile.gff",
-        hints_prot = f"{rules.braker_protein.output[0]}/hintsfile.gff",
-    output:
-        braker_combined = f"{ANNOTATION_DIR}/braker/tsebra/braker_combined.gtf"
-    log: LOG_DIR + '/braker/tsebra.log'
-    container: 'docker://teambraker/braker3' 
-    shell:
-        """
-        tsebra.py -g {input.rna_aug},{input.prot_aug} \
-            -c {input.config} \
-            -e {input.hints_rna},{input.hints_prot} \
-            -o {output} 2> {log} 
+            --species "Trifolium repens" 2> {log}
         """ 
-
-rule rename_tsebra_gtf:
-    input:
-        rules.tsebra_combine.output
-    output:
-        gtf = f"{ANNOTATION_DIR}/braker/tsebra/braker_combined_renamed.gtf",
-        tab = f"{ANNOTATION_DIR}/braker/tsebra/tsebra_rename_translationTab.txt"
-    log: LOG_DIR + '/braker/rename_gtf.log'
-    container: 'docker://teambraker/braker3'
-    shell:
-        """
-        rename_gtf.py --gtf {input} \
-            --prefix TrR_v6 \
-            --translation_tab {output.tab} \
-            --out {output.gtf} 2> {log} 
-        """
-
-rule addUTRs:
-    input:
-        masked_genome = rules.repeat_masker.output.fasta,
-        rna_bam = rules.merge_rnaseq_bams.output.bam,
-        hints = rules.rename_tsebra_gtf.output.gtf
-    output:
-        f"{ANNOTATION_DIR}/braker/gushr/TrR_v6_brakerCombined_tsebraRenamed_withUTRs.gtf"
-    log: LOG_DIR + '/braker/gushr_addUTRs.log'
-    params:
-        tmp = f"{config['results_prefix']}/tmp/",
-        out = f"{ANNOTATION_DIR}/braker/gushr/TrR_v6_brakerCombined_tsebraRenamed_withUTRs",
-        gemoma = f"{config['results_prefix']}/tmp/GeMoMa-1.6.2.jar"
-    container: 'library://james-s-santangelo/gushr/gushr:v1.0.0'
-    threads: 10
-    shell:
-        """
-        mkdir -p {params.tmp}
-        cp /opt/GUSHR/GeMoMa-1.6.2.jar {params.gemoma}
-        gushr.py  -t {input.hints} \
-            -b {input.rna_bam} \
-            -g {input.masked_genome} \
-            -o {params.out} \
-            -q 1 \
-            -c {threads} \
-            -d {params.tmp} \
-            --GeMoMaJar {params.gemoma}
-        """
-
-rule clean_gushr_gtf:
-    input:
-        rules.addUTRs.output
-    output:
-        f"{ANNOTATION_DIR}/braker/gushr/TrR_v6_brakerCombined_tsebraRenamed_withUTRs_cleaned.gtf"
-    run:
-        with open(input[0], 'r') as fin:
-            with open(output[0], 'w') as fout:
-                lines = fin.readlines()
-                for l in lines:
-                    sl = l.split('\t')
-                    ssl = list(map(str.strip, sl))
-                    ssl_3pr = ["three_prime_utr" if x=="3'-UTR" else x for x in ssl]
-                    ssl_5pr = ["five_prime_utr" if x=="5'-UTR" else x for x in ssl_3pr]
-                    nssl = "\t".join(ssl_5pr)
-                    fout.write(f"{nssl}\n") 
 
 ###############################
 #### CLEAN & TRANSFORM GTF ####
@@ -411,7 +309,7 @@ rule clean_gushr_gtf:
 
 rule gtf_to_gff:
     input:
-        rules.clean_gushr_gtf.output
+        rules.braker.output
     output:
         f"{ANNOTATION_DIR}/TrR_v6_structural.gff"
     container: 'docker://quay.io/biocontainers/agat:1.0.0--pl5321hdfd78af_0'
