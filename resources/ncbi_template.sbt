@@ -35,8 +35,8 @@ Submit-block ::= {
         },
         {
           name name {
-            last "Paul",
-            first "Battlay",
+            last "Battlay",
+            first "Paul",
             middle "",
             initials "",
             suffix "",
@@ -45,8 +45,8 @@ Submit-block ::= {
         },
         {
           name name {
-            last "Brandon",
-            first "Hendrickson",
+            last "Hendrickson",
+            first "Brandon",
             middle "",
             initials "",
             suffix "",
@@ -65,8 +65,8 @@ Submit-block ::= {
         },
         {
           name name {
-            last "Kenneth",
-            first "Olsen",
+            last "Olsen",
+            first "Kenneth",
             middle "",
             initials "M.",
             suffix "",
@@ -75,28 +75,8 @@ Submit-block ::= {
         },
         {
           name name {
-            last "Nicholas",
-            first "Kooyers",
-            middle "",
-            initials "J.",
-            suffix "",
-            title ""
-          }
-        },
-        {
-          name name {
-            last "Kathryn",
-            first "Hodgins",
-            middle "",
-            initials "A.",
-            suffix "",
-            title ""
-          }
-        },
-        {
-          name name {
             last "Johnson",
-            first "Johnson",
+            first "Marc",
             middle "",
             initials "T.J.",
             suffix "",
@@ -105,8 +85,18 @@ Submit-block ::= {
         },
         {
           name name {
-            last "Rob",
-            first "Ness",
+            last "Hodgins",
+            first "Kathryn",
+            middle "",
+            initials "A.",
+            suffix "",
+            title ""
+          }
+        },
+        {
+          name name {
+            last "Ness",
+            first "Rob",
             middle "",
             initials "W.",
             suffix "",
@@ -144,8 +134,8 @@ Seqdesc ::= pub {
           },
           {
             name name {
-              last "Paul",
-              first "Battlay",
+              last "Battlay",
+              first "Paul",
               middle "",
               initials "",
               suffix "",
@@ -154,8 +144,8 @@ Seqdesc ::= pub {
           },
           {
             name name {
-              last "Brandon",
-              first "Hendrickson",
+              last "Hendrickson",
+              first "Brandon",
               middle "",
               initials "",
               suffix "",
@@ -174,8 +164,8 @@ Seqdesc ::= pub {
           },
           {
             name name {
-              last "Kenneth",
-              first "Olsen",
+              last "Olsen",
+              first "Kenneth",
               middle "",
               initials "M.",
               suffix "",
@@ -184,28 +174,8 @@ Seqdesc ::= pub {
           },
           {
             name name {
-              last "Nicholas",
-              first "Kooyers",
-              middle "",
-              initials "J.",
-              suffix "",
-              title ""
-            }
-          },
-          {
-            name name {
-              last "Kathryn",
-              first "Hodgins",
-              middle "",
-              initials "A.",
-              suffix "",
-              title ""
-            }
-          },
-          {
-            name name {
               last "Johnson",
-              first "Johnson",
+              first "Marc",
               middle "",
               initials "T.J.",
               suffix "",
@@ -214,8 +184,18 @@ Seqdesc ::= pub {
           },
           {
             name name {
-              last "Rob",
-              first "Ness",
+              last "Hodgins",
+              first "Kathryn",
+              middle "",
+              initials "A.",
+              suffix "",
+              title ""
+            }
+          },
+          {
+            name name {
+              last "Ness",
+              first "Rob",
               middle "",
               initials "W.",
               suffix "",
@@ -224,7 +204,8 @@ Seqdesc ::= pub {
           }
         }
       },
-      title "Haplotype-resolved, chromosome level assembly of Trifolium repens"
+      title "Haplotype-resolved, chromosome-level assembly of white clover
+ (Trifolium repens)"
     }
   }
 }

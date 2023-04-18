@@ -254,9 +254,11 @@ rule braker_protein:
         proteins = rules.combine_protein_dbs.output,
         masked_genome = rules.repeat_masker.output.fasta,
     output:
-        directory(f"{ANNOTATION_DIR}/braker/proteins")
+        prot_aug = f"{ANNOTATION_DIR}/braker/proteins/Augustus/augustus.hints.gtf",
+        hints_prot = f"{ANNOTATION_DIR}/braker/proteins/hintsfile.gff"
     log: LOG_DIR + '/braker/proteins.log'
     params:
+        outputdir = f"{ANNOTATION_DIR}/braker/rnaseq",
         genemark = GENEMARK,
         prothint = PROTHINT,
     threads: 30
@@ -270,7 +272,7 @@ rule braker_protein:
             --GENEMARK_PATH {params.genemark} \
             --PROTHINT_PATH {params.prothint} \
             --threads {threads} \
-            --workingdir {output} \
+            --workingdir {params.outputdir} \
             --species "Trifolium repens prot" 2> {log}
         """ 
 
@@ -304,7 +306,8 @@ rule braker_rnaseq:
         masked_genome = rules.repeat_masker.output.fasta,
         bam = rules.merge_rnaseq_bams.output.bam
     output:
-        directory(f"{ANNOTATION_DIR}/braker/rnaseq")
+        rna_aug = f"{ANNOTATION_DIR}/braker/rnaseq/Augustus/augustus.hints.gtf",
+        hints_rna = f"{ANNOTATION_DIR}/braker/rnaseq/hintsfile.gff"
     log: LOG_DIR + '/braker/rnaseq.log'
     params:
         outputdir = f"{ANNOTATION_DIR}/braker/rnaseq",
@@ -319,7 +322,7 @@ rule braker_rnaseq:
             --useexisting \
             --threads {threads} \
             --GENEMARK_PATH={params.genemark} \
-            --workingdir {output} \
+            --workingdir {params.outputdir} \
             --species "Trifolium repens rna" 2> {log} 
         """
 
@@ -327,19 +330,20 @@ rule tsebra_combine:
     input:
         rules.braker_protein.output,
         rules.braker_rnaseq.output,
-        config = '../config/tsebra.cfg',
-        rna_aug = f"{rules.braker_rnaseq.output[0]}/Augustus/augustus.hints.gtf",
-        prot_aug = f"{rules.braker_protein.output[0]}/Augustus/augustus.hints.gtf",
-        hints_rna= f"{rules.braker_rnaseq.output[0]}/hintsfile.gff",
-        hints_prot = f"{rules.braker_protein.output[0]}/hintsfile.gff",
+        rna_aug = rules.braker_rnaseq.output.rna_aug, 
+        prot_aug = rules.braker_protein.output.prot_aug, 
+        hints_rna= rules.braker_rnaseq.output.hints_rna,
+        hints_prot = rules.braker_protein.output.hints_prot 
     output:
         braker_combined = f"{ANNOTATION_DIR}/braker/tsebra/braker_combined.gtf"
     log: LOG_DIR + '/braker/tsebra.log'
-    container: 'docker://teambraker/braker3' 
+    container: 'docker://teambraker/braker3'
+    params:
+        config = '../config/tsebra.cfg',
     shell:
         """
         tsebra.py -g {input.rna_aug},{input.prot_aug} \
-            -c {input.config} \
+            -c {params.config} \
             -e {input.hints_rna},{input.hints_prot} \
             -o {output} 2> {log} 
         """ 
@@ -355,65 +359,38 @@ rule rename_tsebra_gtf:
     shell:
         """
         rename_gtf.py --gtf {input} \
-            --prefix TrR_v6 \
+            --prefix ACLI19 \
             --translation_tab {output.tab} \
             --out {output.gtf} 2> {log} 
         """
-
-rule addUTRs:
-    input:
-        masked_genome = rules.repeat_masker.output.fasta,
-        rna_bam = rules.merge_rnaseq_bams.output.bam,
-        hints = rules.rename_tsebra_gtf.output.gtf
-    output:
-        f"{ANNOTATION_DIR}/braker/gushr/TrR_v6_brakerCombined_tsebraRenamed_withUTRs.gtf"
-    log: LOG_DIR + '/braker/gushr_addUTRs.log'
-    params:
-        tmp = f"{config['results_prefix']}/tmp/",
-        out = f"{ANNOTATION_DIR}/braker/gushr/TrR_v6_brakerCombined_tsebraRenamed_withUTRs",
-        gemoma = f"{config['results_prefix']}/tmp/GeMoMa-1.6.2.jar"
-    container: 'library://james-s-santangelo/gushr/gushr:v1.0.0'
-    threads: 10
-    shell:
-        """
-        mkdir -p {params.tmp}
-        cp /opt/GUSHR/GeMoMa-1.6.2.jar {params.gemoma}
-        gushr.py  -t {input.hints} \
-            -b {input.rna_bam} \
-            -g {input.masked_genome} \
-            -o {params.out} \
-            -q 1 \
-            -c {threads} \
-            -d {params.tmp} \
-            --GeMoMaJar {params.gemoma}
-        """
-
-rule clean_gushr_gtf:
-    input:
-        rules.addUTRs.output
-    output:
-        f"{ANNOTATION_DIR}/braker/gushr/TrR_v6_brakerCombined_tsebraRenamed_withUTRs_cleaned.gtf"
-    run:
-        with open(input[0], 'r') as fin:
-            with open(output[0], 'w') as fout:
-                lines = fin.readlines()
-                for l in lines:
-                    sl = l.split('\t')
-                    ssl = list(map(str.strip, sl))
-                    ssl_3pr = ["three_prime_utr" if x=="3'-UTR" else x for x in ssl]
-                    ssl_5pr = ["five_prime_utr" if x=="5'-UTR" else x for x in ssl_3pr]
-                    nssl = "\t".join(ssl_5pr)
-                    fout.write(f"{nssl}\n") 
 
 ###############################
 #### CLEAN & TRANSFORM GTF ####
 ###############################
 
+rule remove_features_and_organelles:
+    input:
+        rules.rename_tsebra_gtf.output
+    output:
+        f"{ANNOTATION_DIR}/cleaned/braker_combined_CDSonly_noOrgs.gtf"
+    run:
+        organelles = ['Mitochondria', 'Plastid']
+        features = ['exon', 'intron', 'gene', 'transcript']
+        with open(input[0], 'r') as fin:
+            with open(output[0], 'w') as fout:
+                lines = fin.readlines()
+                for line in lines:
+                    sline = line.split('\t')
+                    if sline[0] in organelles or sline[2] in features:
+                        pass
+                    else:
+                        fout.write(line)
+
 rule gtf_to_gff:
     input:
-        rules.clean_gushr_gtf.output
+        rules.remove_features_and_organelles.output
     output:
-        f"{ANNOTATION_DIR}/TrR_v6_structural.gff"
+        f"{ANNOTATION_DIR}/UTM_Trep_v1.0_structural.gff"
     container: 'docker://quay.io/biocontainers/agat:1.0.0--pl5321hdfd78af_0'
     log: LOG_DIR + '/gtf_to_gff/gtf_to_gff.log'
     shell:
@@ -422,11 +399,61 @@ rule gtf_to_gff:
             --output {output} &> {log}
         """
 
-rule gff_sort:
+rule remove_gff_exons:
     input:
         rules.gtf_to_gff.output
     output:
-        f"{ANNOTATION_DIR}/TrR_v6_structural_sorted.gff"
+        f"{ANNOTATION_DIR}/cleaned/UTM_Trep_v1.0_structural_noExons.gff"
+    run:
+        with open(input[0], 'r') as fin:
+            with open(output[0], 'w') as fout:
+                lines = fin.readlines()
+                for line in lines:
+                    if not line.startswith('#'):
+                        sline = line.split('\t')
+                        if sline[2] == 'exon':
+                            pass
+                        else:
+                            fout.write(line)
+                    else:
+                        fout.write(line)
+
+rule fix_transcript_id:
+    input:
+        rules.remove_gff_exons.output
+    output:
+        f"{ANNOTATION_DIR}/cleaned/UTM_Trep_v1.0_structural_noExons_transIDreformat.gff"
+    run:
+        with open(input[0], 'r') as fin:
+            with open(output[0], 'w') as fout:
+                lines = fin.readlines()
+                for line in lines:
+                    if not line.startswith('#'):
+                        sline = line.split('\t')
+                        feature = sline[2]
+                        if feature == 'gene':
+                            # Remove transcript_id attribute from gene features
+                            sline[8] = re.sub(r'(;transcript_id.*$)', '', sline[8])
+                        elif feature == 'mRNA':
+                            # Make sure transcript_id annotations for isoforms are correct (i.e., .t2, .t3, etc.)
+                            # Use ID attribute since transcript_id attributes are incorrectly incremented and will be replaced
+                            id_pattern = r"(?<=ID=)(.*)(?=;Parent)"
+                            ID = re.search(id_pattern, sline[8]).group(1)
+                            if ID.endswith('.t1'):
+                                # First isoforms are fine
+                                pass
+                            else:
+                                # Alternative isoforms need transcript_id replaced with ID
+                                sline[8] = re.sub(r'(?<=;transcript_id=)(.*$)', ID, sline[8])
+                        fout.write('\t'.join(sline))
+                    else:
+                        fout.write(line) 
+
+rule gff_sort:
+    input:
+        rules.fix_transcript_id.output
+    output:
+        f"{ANNOTATION_DIR}/cleaned/UTM_Trep_v1.0_structural_noExons_transIDreformat_sorted.gff"
     log: LOG_DIR + '/gff_sort/gff_sort.log'
     conda: '../envs/annotation.yaml'
     shell:
@@ -439,7 +466,7 @@ rule get_proteins:
         gff = rules.gff_sort.output,
         ref = rules.repeat_masker.output.fasta
     output:
-        f"{ANNOTATION_DIR}/TrR_v6_proteins.fasta"
+        f"{ANNOTATION_DIR}/UTM_Trep_v1.0_proteins.fasta"
     log: LOG_DIR + '/get_proteins/get_proteins.log'
     container: 'docker://teambraker/braker3'
     shell:
@@ -459,7 +486,7 @@ rule run_interproscan:
         gff =  f"{ANNOTATION_DIR}/interproscan/TrR_v6_interproscan.gff3",
         xml =  f"{ANNOTATION_DIR}/interproscan/TrR_v6_interproscan.xml"
     log: LOG_DIR + '/interproscan/run_interproscan.log'
-    threads: 32
+    threads: 24
     params:
         out_base =  f"{ANNOTATION_DIR}/interproscan/TrR_v6_interproscan"
     container: 'library://james-s-santangelo/interproscan/interproscan:5.61-93.0' 
@@ -484,17 +511,6 @@ rule funannotate_setup:
         """
         funannotate setup --database {output} -b embryophyta --force 2> {log}
         """
-
-rule feature_recode:
-    input:
-        rules.gff_sort.output
-    output:
-        f"{ANNOTATION_DIR}/TrR_v6_structural_sorted_featureRecode.gff"
-    shell:
-        """
-        awk 'BEGIN{{FS=OFS="\t"}} {{gsub(/transcript/, "mRNA", $3)}} 1' {input} > {output}
-        """
-
 
 rule dl_eggnog_db:
     output:
@@ -530,20 +546,21 @@ rule run_eggnog_mapper:
 rule funannotate_annotate:
     input:
         enm = rules.run_eggnog_mapper.output.annot,
-        gff = rules.feature_recode.output,
+        gff = rules.gff_sort.output,
         ref = rules.repeat_masker.output.fasta,
         iprs = rules.run_interproscan.output.xml,
         db = rules.funannotate_setup.output 
     output:
         directory(f"{ANNOTATION_DIR}/funannotate/annotations")
     log: LOG_DIR + '/funannotate/funannotate_annotate.log'
-    container: 'docker://nextgenusfs/funannotate:latest'
-    threads: 32
+    container: 'docker://nextgenusfs/funannotate:v1.8.15'
+    threads: 48
     params:
         sbt = NCBI_TEMPLATE,
         locus_tag = 'P8452'
     shell:
         """
+        mkdir {output}
         funannotate annotate \
             --sbt {params.sbt} \
             --gff {input.gff} \
