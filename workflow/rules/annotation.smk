@@ -580,78 +580,104 @@ rule funannotate_annotate:
             --cpus {threads} 2> {log}
         """
 
+rule download_ec_numbers:
+    output:
+        f"{PROGRAM_RESOURCE_DIR}/EC_numbers/enzyme.dat"
+    params:
+        outdir = f"{PROGRAM_RESOURCE_DIR}/EC_numbers",
+        url = 'https://ftp.expasy.org/databases/enzyme/enzyme.dat'
+    shell:
+        """
+        wget {params.url} --no-check-certificate -P {params.outdir}
+        """
+
+rule reformat_functional_gff:
+    input:
+        gff = rules.funannotate_annotate.output.gff3,
+        ec = rules.download_ec_numbers.output
+    output:
+        f"{ANNOTATION_DIR}/UTM_Trep_v1.0_functional_reformated.gff"
+    conda: '../envs/gffutils.yaml'
+    params:
+        locus_tag = 'P8452'
+    script:
+        "../scripts/python/reformat_functional_gff.py"
+
 rule gff_sort_functional:
     input:
-        rules.funannotate_annotate.output.gff3
+        rules.reformat_functional_gff.output
     output:
-        f"{ANNOTATION_DIR}/UTM_Trep_v1.0_functional_sorted.gff"
+        f"{ANNOTATION_DIR}/UTM_Trep_v1.0_functional_reformated_sorted.gff"
     log: LOG_DIR + '/gff_sort/gff_sort_functional.log'
     conda: '../envs/annotation.yaml'
     shell:
         """
-        gt gff3 -sort -tidy -retainids {input} > {output} 2> {log}
+        gt gff3 -sort -retainids -tidy {input} > {output} 2> {log}
         """
 
-rule add_locus_tag:
+rule fix_attributes:
     input:
         rules.gff_sort_functional.output
     output:
-        f"{ANNOTATION_DIR}/UTM_Trep_v1.0_functional_sorted_wLocusTag.gff"
-    params:
-        locus_tag = 'P8452'
-    run:
-        with open(input[0], 'r') as fin:
-            with open(output[0], 'w') as fout:
-                lines = fin.readlines()
-                total_genes = sum([l.split('\t')[2] == 'gene' for l in lines if not l.startswith('#')])
-                gene_num = 1
-                for line in lines:
-                    if not line.startswith('#'):
-                        sline = line.split('\t')
-                        feature = sline[2]
-                        if feature == 'gene':
-                            # Remove transcript_id attribute from gene features
-                            sline[8] = re.sub(r'(;transcript_id.*$)', '', sline[8])
-                                                
-                            # Assign locus tag to attributes of gene features
-                            locus_tag = f'{params.locus_tag}_' + str(int(gene_num)).zfill(len(str(total_genes)))
-                            sline[8] = f"{sline[8].strip()};locus_tag={locus_tag}\n"
-                            gene_num += 1
-                        else:
-                            pass
-                        fout.write('\t'.join(sline))
-                    else:
-                        fout.write(line) 
-
-rule tableToAsn_haploid:
-    input:
-        gff = rules.add_locus_tag.output,
-        sbt = NCBI_TEMPLATE,
-        ref = rules.split_fasta_toChroms_andOrganelles.output.chroms
-    output:
-        directory(f"{NCBI_DIR}/table2asn_haploid")
-    log: f"{LOG_DIR}/tableToAsn/tableToAsn_haploid.log"
+         f"{ANNOTATION_DIR}/UTM_Trep_v1.0_functional_reformated_sorted_attFix.gff"
     shell:
         """
-        wget https://ftp.ncbi.nlm.nih.gov/asn1-converters/by_program/table2asn/linux64.table2asn.gz
+        sed 's/eC_number/ec_number/g' {input} | sed 's/note/Note/g' > {output}
+        """
+
+rule split_chromosomal_fasta:
+    input:
+        ref = rules.split_fasta_toChroms_andOrganelles.output.chroms
+    output:
+        chrom_fasta = f"{NCBI_DIR}/haploid/{{chrom}}/{{chrom}}.fasta"
+    conda: '../envs/annotation.yaml'
+    shell:
+        """
+        samtools faidx {input.ref} {wildcards.chrom} > {output.chrom_fasta}
+        """
+
+rule download_tableToAsn:
+    output:
+        'table2asn'
+    params:
+        url = 'https://ftp.ncbi.nlm.nih.gov/asn1-converters/by_program/table2asn/linux64.table2asn.gz'
+    shell:
+        """
+        wget {params.url}
         gunzip linux64.table2asn.gz
         mv linux64.table2asn table2asn
         chmod +x table2asn
+        """
 
+rule tableToAsn_haploid:
+    input:
+        gff = rules.fix_attributes.output,
+        sbt = NCBI_TEMPLATE,
+        ref = rules.split_chromosomal_fasta.output,
+        tbl_asn = rules.download_tableToAsn.output
+    output:
+        ncbi_out = directory(f"{NCBI_DIR}/haploid/{{chrom}}/{{chrom}}_table2asn")
+    log: f"{LOG_DIR}/tableToAsn/{{chrom}}_tableToAsn_haploid.log"
+    conda: '../envs/annotation.yaml'
+    shell:
+        """
         ./table2asn -i {input.ref} \
             -f {input.gff} \
             -t {input.sbt} \
-            -o {output} \
+            -outdir {output} \
             -Z -V vb -euk -c f \
             -gaps-min 10 \
             -l proximity-ligation \
             -gaps-unknown 100 \
-            -j "[organism=Trifolium repens]" 2> {log}
+            -j "[organism=Trifolium repens]" \
+            -W \
+            -logfile {log} \
+            -verbose 2> {log}
         """
 
 rule annotation_done:
     input:
-        expand(rules.tableToAsn_haploid.output)
+        expand(rules.tableToAsn_haploid.output, chrom=CHROMOSOMES)
     output:
         f"{ANNOTATION_DIR}/annotation.done"
     shell:
