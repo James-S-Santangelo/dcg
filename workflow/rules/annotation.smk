@@ -390,7 +390,7 @@ rule gtf_to_gff:
     input:
         rules.remove_features_and_organelles.output
     output:
-        f"{ANNOTATION_DIR}/UTM_Trep_v1.0_structural.gff"
+        f"{ANNOTATION_DIR}/cleand/UTM_Trep_v1.0_structural.gff"
     container: 'docker://quay.io/biocontainers/agat:1.0.0--pl5321hdfd78af_0'
     log: LOG_DIR + '/gtf_to_gff/gtf_to_gff.log'
     shell:
@@ -399,30 +399,23 @@ rule gtf_to_gff:
             --output {output} &> {log}
         """
 
-rule remove_gff_exons:
+rule gff_sort:
     input:
         rules.gtf_to_gff.output
     output:
-        f"{ANNOTATION_DIR}/cleaned/UTM_Trep_v1.0_structural_noExons.gff"
-    run:
-        with open(input[0], 'r') as fin:
-            with open(output[0], 'w') as fout:
-                lines = fin.readlines()
-                for line in lines:
-                    if not line.startswith('#'):
-                        sline = line.split('\t')
-                        if sline[2] == 'exon':
-                            pass
-                        else:
-                            fout.write(line)
-                    else:
-                        fout.write(line)
+        f"{ANNOTATION_DIR}/cleaned/UTM_Trep_v1.0_structural_sorted.gff"
+    log: LOG_DIR + '/gff_sort/gff_sort.log'
+    conda: '../envs/annotation.yaml'
+    shell:
+        """
+        gt gff3 -sort -tidy -retainids {input} > {output} 2> {log}
+        """
 
-rule fix_transcript_id:
+rule reformat_gff:
     input:
-        rules.remove_gff_exons.output
+        rules.gff_sort.output
     output:
-        f"{ANNOTATION_DIR}/cleaned/UTM_Trep_v1.0_structural_noExons_transIDreformat.gff"
+        f"{ANNOTATION_DIR}/cleaned/UTM_Trep_v1.0_structural_sorted_reformated.gff"
     run:
         with open(input[0], 'r') as fin:
             with open(output[0], 'w') as fout:
@@ -449,21 +442,10 @@ rule fix_transcript_id:
                     else:
                         fout.write(line) 
 
-rule gff_sort:
-    input:
-        rules.fix_transcript_id.output
-    output:
-        f"{ANNOTATION_DIR}/cleaned/UTM_Trep_v1.0_structural_noExons_transIDreformat_sorted.gff"
-    log: LOG_DIR + '/gff_sort/gff_sort.log'
-    conda: '../envs/annotation.yaml'
-    shell:
-        """
-        gff3sort.pl {input} > {output} 2> {log}
-        """
 
 rule get_proteins:
     input:
-        gff = rules.gff_sort.output,
+        gff = rules.reformat_gff.output,
         ref = rules.repeat_masker.output.fasta
     output:
         f"{ANNOTATION_DIR}/UTM_Trep_v1.0_proteins.fasta"
@@ -543,42 +525,133 @@ rule run_eggnog_mapper:
             --override &> {log}
         """
 
+rule split_fasta_toChroms_andOrganelles:
+    input:
+       rules.repeat_masker.output.fasta
+    output:
+        chroms = f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/TrR_v6_chromsOnly.fasta", 
+        mito = f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/TrR_v6_mitochondria.fasta", 
+        cp = f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/TrR_v6_chloroplast.fasta"
+    conda: '../envs/annotation.yaml'
+    params:
+        chroms = 'Chr01_Occ Chr01_Pall Chr02_Occ Chr02_Pall Chr03_Occ Chr03_Pall Chr04_Occ Chr04_Pall Chr05_Occ Chr05_Pall Chr06_Occ Chr06_Pall Chr07_Occ Chr07_Pall Chr08_Occ Chr08_Pall'
+    shell:
+        """
+        samtools faidx {input} {params.chroms} > {output.chroms}
+        samtools faidx {input} Mitochondria > {output.mito}
+        samtools faidx {input} Plastid > {output.cp}
+        """
+
 rule funannotate_annotate:
     input:
         enm = rules.run_eggnog_mapper.output.annot,
-        gff = rules.gff_sort.output,
-        ref = rules.repeat_masker.output.fasta,
+        gff = rules.reformat_gff.output, 
+        ref = rules.split_fasta_toChroms_andOrganelles.output.chroms,
         iprs = rules.run_interproscan.output.xml,
         db = rules.funannotate_setup.output 
     output:
-        directory(f"{ANNOTATION_DIR}/funannotate/annotations")
+        directory(f"{ANNOTATION_DIR}/funannotate/annotations"),
+        fasta = f"{ANNOTATION_DIR}/funannotate/annotations/annotate_results/Trifolium_repens.scaffolds.fa", 
+        prot = f"{ANNOTATION_DIR}/funannotate/annotations/annotate_results/Trifolium_repens.proteins.fa", 
+        gff3 = f"{ANNOTATION_DIR}/funannotate/annotations/annotate_results/Trifolium_repens.gff3", 
+        agp = f"{ANNOTATION_DIR}/funannotate/annotations/annotate_results/Trifolium_repens.agp", 
+        gbk = f"{ANNOTATION_DIR}/funannotate/annotations/annotate_results/Trifolium_repens.gbk", 
+        tbl = f"{ANNOTATION_DIR}/funannotate/annotations/annotate_results/Trifolium_repens.tbl"
     log: LOG_DIR + '/funannotate/funannotate_annotate.log'
     container: 'docker://nextgenusfs/funannotate:v1.8.15'
-    threads: 48
+    threads: 48 
     params:
         sbt = NCBI_TEMPLATE,
-        locus_tag = 'P8452'
+        outdir = f"{ANNOTATION_DIR}/funannotate/annotations"
     shell:
         """
-        mkdir {output}
+        mkdir {params.outdir}
         funannotate annotate \
             --sbt {params.sbt} \
             --gff {input.gff} \
             --fasta {input.ref} \
             --species "Trifolium repens" \
-            --out {output} \
+            --out {params.outdir} \
             --iprscan {input.iprs} \
             --eggnog {input.enm} \
             --force \
-            --rename {params.locus_tag} \
             --database {input.db} \
             --busco_db embryophyta \
             --cpus {threads} 2> {log}
         """
 
+rule gff_sort_functional:
+    input:
+        rules.funannotate_annotate.output.gff3
+    output:
+        f"{ANNOTATION_DIR}/UTM_Trep_v1.0_functional_sorted.gff"
+    log: LOG_DIR + '/gff_sort/gff_sort_functional.log'
+    conda: '../envs/annotation.yaml'
+    shell:
+        """
+        gt gff3 -sort -tidy -retainids {input} > {output} 2> {log}
+        """
+
+rule add_locus_tag:
+    input:
+        rules.gff_sort_functional.output
+    output:
+        f"{ANNOTATION_DIR}/UTM_Trep_v1.0_functional_sorted_wLocusTag.gff"
+    params:
+        locus_tag = 'P8452'
+    run:
+        with open(input[0], 'r') as fin:
+            with open(output[0], 'w') as fout:
+                lines = fin.readlines()
+                total_genes = sum([l.split('\t')[2] == 'gene' for l in lines if not l.startswith('#')])
+                gene_num = 1
+                for line in lines:
+                    if not line.startswith('#'):
+                        sline = line.split('\t')
+                        feature = sline[2]
+                        if feature == 'gene':
+                            # Remove transcript_id attribute from gene features
+                            sline[8] = re.sub(r'(;transcript_id.*$)', '', sline[8])
+                                                
+                            # Assign locus tag to attributes of gene features
+                            locus_tag = f'{params.locus_tag}_' + str(int(gene_num)).zfill(len(str(total_genes)))
+                            sline[8] = f"{sline[8].strip()};locus_tag={locus_tag}\n"
+                            gene_num += 1
+                        else:
+                            pass
+                        fout.write('\t'.join(sline))
+                    else:
+                        fout.write(line) 
+
+rule tableToAsn_haploid:
+    input:
+        gff = rules.add_locus_tag.output,
+        sbt = NCBI_TEMPLATE,
+        ref = rules.split_fasta_toChroms_andOrganelles.output.chroms
+    output:
+        directory(f"{NCBI_DIR}/table2asn_haploid")
+    log: f"{LOG_DIR}/tableToAsn/tableToAsn_haploid.log"
+    shell:
+        """
+        wget https://ftp.ncbi.nlm.nih.gov/asn1-converters/by_program/table2asn/linux64.table2asn.gz
+        gunzip linux64.table2asn.gz
+        mv linux64.table2asn table2asn
+        chmod +x table2asn
+
+        ./table2asn -i {input.ref} \
+            -f {input.gff} \
+            -t {input.sbt} \
+            -o {output} \
+            -Z -V vb -euk -c f \
+            -gaps-min 10 \
+            -l proximity-ligation \
+            -gaps-unknown 100 \
+            -j "[organism=Trifolium repens]" 2> {log}
+        """
+
 rule annotation_done:
     input:
-        expand(rules.funannotate_annotate.output)
+        expand(rules.tableToAsn_haploid.output)
     output:
         f"{ANNOTATION_DIR}/annotation.done"
     shell:
