@@ -619,10 +619,10 @@ rule gff_sort_functional:
     output:
         f"{ANNOTATION_DIR}/UTM_Trep_v1.0_functional_final_sorted.gff3"
     log: LOG_DIR + '/gff_sort/gff_sort_functional.log'
-    conda: '../envs/annotation.yaml'
+    conda: '../envs/gffutils.yaml'
     shell:
         """
-        gt gff3 -sort -retainids -tidy {input} > {output} 2> {log}
+        gff3_sort -g {input} -r -og {output} 2> {log}
         """
 
 rule split_chromosomal_fasta:

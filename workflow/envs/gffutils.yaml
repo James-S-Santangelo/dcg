@@ -4,3 +4,6 @@ channels:
 dependencies:
   - python
   - gffutils
+  - pip
+  - pip:
+    - gff3tool
