@@ -591,23 +591,33 @@ rule download_ec_numbers:
         wget {params.url} --no-check-certificate -P {params.outdir}
         """
 
-rule reformat_functional_gff:
+rule fixEC_CDSincrement_locusTags:
     input:
         gff = rules.funannotate_annotate.output.gff3,
         ec = rules.download_ec_numbers.output
     output:
-        f"{ANNOTATION_DIR}/UTM_Trep_v1.0_functional_reformated.gff"
+        f"{ANNOTATION_DIR}/UTM_Trep_v1.0_functional_ECfix_wLocusTags.gff"
     conda: '../envs/gffutils.yaml'
     params:
         locus_tag = 'P8452'
     script:
-        "../scripts/python/reformat_functional_gff.py"
+        "../scripts/python/fixEC_CDSincrement_locusTags.py"
+
+rule fixAtts_stopCodons:
+    input:
+        gff = rules.fixEC_CDSincrement_locusTags.output
+    output:
+        db = f"{PROGRAM_RESOURCE_DIR}/gffutils/UTM_Trep_v1.0.gffdb",
+        gff = f"{ANNOTATION_DIR}/UTM_Trep_v1.0_functional_final.gff3"
+    conda: '../envs/gffutils.yaml'
+    script:
+        "../scripts/python/fixAtts_stopCodons.py"
 
 rule gff_sort_functional:
     input:
-        rules.reformat_functional_gff.output
+        rules.fixAtts_stopCodons.output.gff
     output:
-        f"{ANNOTATION_DIR}/UTM_Trep_v1.0_functional_reformated_sorted.gff"
+        f"{ANNOTATION_DIR}/UTM_Trep_v1.0_functional_final_sorted.gff3"
     log: LOG_DIR + '/gff_sort/gff_sort_functional.log'
     conda: '../envs/annotation.yaml'
     shell:
@@ -615,25 +625,15 @@ rule gff_sort_functional:
         gt gff3 -sort -retainids -tidy {input} > {output} 2> {log}
         """
 
-rule fix_attributes:
-    input:
-        rules.gff_sort_functional.output
-    output:
-         f"{ANNOTATION_DIR}/UTM_Trep_v1.0_functional_reformated_sorted_attFix.gff"
-    shell:
-        """
-        sed 's/eC_number/ec_number/g' {input} | sed 's/note/Note/g' > {output}
-        """
-
 rule split_chromosomal_fasta:
     input:
-        ref = rules.split_fasta_toChroms_andOrganelles.output.chroms
+        rules.split_fasta_toChroms_andOrganelles.output.chroms
     output:
-        chrom_fasta = f"{NCBI_DIR}/haploid/{{chrom}}/{{chrom}}.fasta"
-    conda: '../envs/annotation.yaml'
+        f"{NCBI_DIR}/haploid/{{chrom}}/{{chrom}}.fasta"
+    conda: '../envs/annotation.yaml' 
     shell:
         """
-        samtools faidx {input.ref} {wildcards.chrom} > {output.chrom_fasta}
+        samtools faidx {input} {wildcards.chrom} > {output}
         """
 
 rule download_tableToAsn:
@@ -651,7 +651,7 @@ rule download_tableToAsn:
 
 rule tableToAsn_haploid:
     input:
-        gff = rules.fix_attributes.output,
+        gff = rules.gff_sort_functional.output,
         sbt = NCBI_TEMPLATE,
         ref = rules.split_chromosomal_fasta.output,
         tbl_asn = rules.download_tableToAsn.output
@@ -665,14 +665,13 @@ rule tableToAsn_haploid:
             -f {input.gff} \
             -t {input.sbt} \
             -outdir {output} \
-            -Z -V vb -euk -c f \
+            -M n -Z -J -c w \
+            -V vb -euk \
             -gaps-min 10 \
             -l proximity-ligation \
             -gaps-unknown 100 \
             -j "[organism=Trifolium repens]" \
-            -W \
-            -logfile {log} \
-            -verbose 2> {log}
+            -logfile {log} 2> {log}
         """
 
 rule annotation_done:

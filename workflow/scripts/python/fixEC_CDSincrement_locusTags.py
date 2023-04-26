@@ -30,13 +30,17 @@ with open(snakemake.output[0], 'w') as fout:
             gene_num += 1
         elif feat.featuretype == 'mRNA':
             if 'product' in feat.attributes.keys() and 'EC_number' in feat.attributes.keys():
+                # Rename EC_number
+                feat.attributes['ec_number'] = [feat.attributes['EC_number'][0]]
+                feat.attributes.pop('EC_number')
+
                 # Reassign product if EC Number to 4 digits, else delete EC Number and keep hypothetical
-                EC_number = feat.attributes['EC_number'][0]
+                EC_number = feat.attributes['ec_number'][0]
                 prod = feat.attributes['product'][0]
                 if prod == 'hypothetical protein':
                     EC_split = EC_number.split('.')
                     if len(EC_split) < 4:
-                        del feat.attributes['EC_number']
+                        feat.attributes.pop('ec_number')
                     elif len(EC_split) == 4:
                         new_product = EC_num_to_products[EC_number]
                         # Handle cases where EC numbers have been reassigned
@@ -49,6 +53,11 @@ with open(snakemake.output[0], 'w') as fout:
                         
                         # Add note to GFF about origin of Product
                         feat.attributes['note'] = ["Funnanotate product changed from hypothetical protein based on EC_number"]
+                else:
+                    EC_split = EC_number.split('.')
+                    if len(EC_split) < 4:
+                        new_ec = '.'.join(EC_split + ['-'] * (4 - len(EC_split)))
+                        feat.attributes['ec_number'] = [new_ec]
         elif feat.featuretype == 'CDS':
             # Assign increment CDS to ensure unique ID
             feat.attributes['ID'][0] = re.sub('cds', f'cds{cds_count}', feat.attributes['ID'][0])
