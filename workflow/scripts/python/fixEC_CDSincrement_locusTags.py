@@ -12,7 +12,10 @@ with open(snakemake.input['ec'][0], 'r') as fin:
             EC_number = l.split('   ')[1].strip()
         if l.startswith('DE'):
             prod = l.split('   ')[1].strip()
-            EC_num_to_products[EC_number] = prod
+            if not EC_number in EC_num_to_products.keys():
+                EC_num_to_products[EC_number] = prod
+            else:
+                EC_num_to_products[EC_number] += EC_num_to_products[EC_number] + prod
         else:
             pass
 
@@ -45,7 +48,7 @@ with open(snakemake.output[0], 'w') as fout:
                         new_product = EC_num_to_products[EC_number]
                         # Handle cases where EC numbers have been reassigned
                         if 'Transferred' in new_product:
-                            pattern = r'(?<=:\s)(\d\.\d+\.\d+\.\d+(?=\.))'
+                            pattern = r'(?<=:\s)(\d\.\d+\.\d+\.\d+(?=[\.|,]))'
                             new_ec = re.search(pattern, new_product).group(1)
                             new_product = EC_num_to_products[new_ec]
                         new_product = new_product.replace('.', '')

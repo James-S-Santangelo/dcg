@@ -666,7 +666,7 @@ rule tableToAsn_haploid:
             -t {input.sbt} \
             -outdir {output} \
             -M n -Z -J -c w \
-            -V vb -euk \
+            -V v \
             -gaps-min 10 \
             -l proximity-ligation \
             -gaps-unknown 100 \

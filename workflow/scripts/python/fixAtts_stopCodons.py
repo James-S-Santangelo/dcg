@@ -5,6 +5,45 @@ import gffutils
 
 db = gffutils.create_db(snakemake.input['gff'][0], snakemake.output['db'], force = True)
 
+def fix_product(feature):
+    
+    # Get product based on feature type
+    featuretype = feature.featuretype
+    # mRNA has product as attribute
+    if featuretype == 'mRNA':
+        product = ','.join(feat.attributes['product'])
+    # Have to get product from CDS's mRNA parent
+    elif featuretype == 'CDS':
+        mrna_parent = [f.id for f in db.parents(feat.id, featuretype='mRNA')][0]
+        product = ','.join(db[mrna_parent].attributes['product'])
+    
+    # Some simple string substitutions for common problems
+    product = re.sub('proteins', 'protein', product)
+    product = re.sub('domains', 'domain', product)
+    product = re.sub('stands', 'strand', product)
+    product = re.sub('Belongs to the ', '', product)
+    product = re.sub('AT3g18370/MYF24_8', 'C2 domain-containing protein', product)
+    product = re.sub('\d+[\s|-]kDa', '', product)
+    product = re.sub(',\s\d+kDa', '', product)
+    product = re.sub('\sA[T|t][a-z0-9]{7}', '', product)
+    product = re.sub('\sYGL059W', '', product)
+
+    # Problems with specific product annotations
+    if feat.id == 'ACLI19_g3593.t1':
+        product = re.sub('\sactivity', '', product)
+    elif feat.id == 'ACLI19_g975.t1':
+        product = 'protein of unknown function'
+    elif 'ACLI19_g1358' in feat.id:
+        product = 'DNA topoisomerase 6 subunit A'
+        
+    # Update product if present, create if not
+    if 'product' in feature.attributes.keys():
+        feat.attributes['product'][0] = product
+    else:
+        feat.attributes['product'] = [product]
+        
+    return(feat)
+
 with open(snakemake.output['gff'], 'w') as fout:
     fout.write("##gff-version 3\n")
     for feat in db.all_features():
@@ -16,28 +55,33 @@ with open(snakemake.output['gff'], 'w') as fout:
                 feat.attributes['gene'] = [re.sub('_\d+$', '', feat.attributes['Name'][0])]
                 feat.attributes.pop('Name')
                 
+                if 'PEPTIDEN4(NACETYLBETAGLUCOSAMINYL)ASPARAGINE' in feat.attributes['gene'][0]:
+                    feat.attributes['gene'][0] = re.sub('PEPTIDEN4(NACETYLBETAGLUCOSAMINYL)ASPARAGINE', 'PNG1', feat.attributes['gene'][0])
+                
             # Extend truncated gene to stop codon
             if feat.id == 'ACLI19_g45676':
                 feat.start = 1814
-            # Mark terminal gene missing stop codong as "pseudo"
-            if feat.id == 'ACLI19_g50411':
-                feat.attributes['pseudo'] = ['true']
+            # Mark terminal gene with missing stop codong as "pseudo"
+            if feat.id == 'ACLI19_g5041q1':
+                feat.attributes['pseudo'] = ['true']            
 
         elif feat.featuretype == 'mRNA':
             # Remove first transcript of ACLI19_g11316 since missing stop codon and second isoform looks good
             if feat.id == 'ACLI19_g11316.t1':
                 continue
                 
-            # Assign protein and transcript IDs
+            # Assign transcript IDs
             locus_tag = [f.attributes['locus_tag'][0] for f in db.parents(feat.id, featuretype='gene')][0]
             transcript = feat.attributes['ID'][0].split('.')[1]
-            feat.attributes['protein_id'] = [f"gnl|NessUTM|{transcript}.{locus_tag}"]
             feat.attributes['transcript_id'] = [f"gnl|NessUTM|mrna{transcript}.{locus_tag}"]
 
             # Extend truncated mRNA to stop codon
             gene_parent = [f.id for f in db.parents(feat.id, featuretype='gene')][0]
             if gene_parent == 'ACLI19_g45676':
                 feat.start = 1814
+            
+            # Fix and reassign product
+            feat = fix_product(feat)
             
         elif feat.featuretype == 'CDS':
             
@@ -54,16 +98,15 @@ with open(snakemake.output['gff'], 'w') as fout:
             if gene_parent == 'ACLI19_g50411':
                 feat.attributes['pseudo'] = ['true']
                 
-            # Assign protein and transcript IDs
+            # Assign protein IDs
             locus_tag = [f.attributes['locus_tag'][0] for f in db.parents(feat.id, featuretype='gene')][0]
             transcript = feat.attributes['Parent'][0].split('.')[1]
             feat.attributes['protein_id'] = [f"gnl|NessUTM|{transcript}.{locus_tag}"]
-            feat.attributes['transcript_id'] = [f"gnl|NessUTM|mrna{transcript}.{locus_tag}"]
             
-            # Assign product & EC Number
-            product = [f.attributes['product'][0] for f in db.parents(feat.id, featuretype='mRNA')][0]
-            feat.attributes['product'] = [product]
+            # Get, fix, and assign product
+            feat = fix_product(feat)
             
+            # Assign EC Number to CDS features
             mrna_parent = [f.id for f in db.parents(feat.id, featuretype='mRNA')][0]
             if 'ec_number' in db[mrna_parent].attributes.keys():
                 feat.attributes['ec_number'] = db[mrna_parent].attributes['ec_number']
@@ -71,5 +114,5 @@ with open(snakemake.output['gff'], 'w') as fout:
         # Don't need exons in final GFF
         elif feat.featuretype == 'exon':
             continue
-
+        
         fout.write(f"{str(feat)}\n")
