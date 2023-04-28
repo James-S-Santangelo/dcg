@@ -51,6 +51,7 @@ with open(snakemake.output[0], 'w') as fout:
                             pattern = r'(?<=:\s)(\d\.\d+\.\d+\.\d+(?=[\.|,]))'
                             new_ec = re.search(pattern, new_product).group(1)
                             new_product = EC_num_to_products[new_ec]
+                        
                         new_product = new_product.replace('.', '')
                         feat.attributes['product'] = [new_product]
                         
