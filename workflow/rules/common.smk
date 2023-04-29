@@ -1,10 +1,16 @@
 # Python functions used through workflow
 
 def get_haplotype_fasta(wildcards):
+    """
+    Simple Python Function that retrieves the raw FASTA file for a given haplotype
+    """
     fasta = glob.glob(f"{HAPLOTYPE_FASTA_DIR}/{wildcards.hap}.fasta")[0]
     return fasta
 
 def get_minimap_hap_vs_hap_input_files(wildcards):
+    """
+    Retrieves input files for rule mapping each haplotype against the other using Minimap. 
+    """
     hap1 = wildcards.hap_comp.split('-')[0]
     hap2 = wildcards.hap_comp.split('-')[1]
     

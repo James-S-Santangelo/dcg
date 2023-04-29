@@ -5,6 +5,9 @@
 #####################################
 
 rule configure_repbase:
+    """
+    Configure RepBase Database for use with RepeatModeler
+    """
     input:
         REPBASE
     output:
@@ -24,6 +27,9 @@ rule configure_repbase:
         """
 
 rule build_repeat_modeler_db:
+    """
+    Build RepeatModeler Database from haploid mapping reference assembly
+    """
     input:
         rules.create_reference_assemblies.output[0]
     output:
@@ -38,6 +44,9 @@ rule build_repeat_modeler_db:
         """
 
 rule repeat_modeler:
+    """
+    Build de novo repeat library from haploid mapping reference assembly using RepeatModeler
+    """
     input:
         rules.build_repeat_modeler_db.output,
         rules.configure_repbase.output
@@ -57,6 +66,9 @@ rule repeat_modeler:
         """
 
 rule merge_repeat_databases:
+    """
+    Merge de novo repeat library with Green Plant (i.e., Viridiplantae) repeat library from RepBase
+    """
     input:
         rm_db = rules.configure_repbase.output.rm,
         tr_db = rules.repeat_modeler.output.fasta
@@ -77,6 +89,9 @@ rule merge_repeat_databases:
         """
 
 rule repeat_masker:
+    """
+    Softmask repeats in the white clover haploid mapping reference assembly.
+    """
     input:
         lib = rules.merge_repeat_databases.output,
         fasta = rules.create_reference_assemblies.output[0]
@@ -114,6 +129,9 @@ rule repeat_masker:
 ###########################################
 
 rule prefetch:
+    """
+    Pre-fetch RNAseq libraries that will be used for structural gene annotation
+    """
     output:
         temp(directory(f"{ANNOTATION_DIR}/rnaseq_reads/{{acc}}"))
     log: LOG_DIR + '/prefetch/{acc}.log'
@@ -126,6 +144,9 @@ rule prefetch:
         """
 
 rule fasterq_dump:
+    """
+    Download pre-fetched RNAseq libraries used for structural gene annotation
+    """
     input:
         expand(rules.prefetch.output, acc=RNASEQ_ACCESSIONS)
     output:
@@ -149,6 +170,9 @@ rule fasterq_dump:
         """
 
 rule gzip_fastq:
+    """
+    Gzip downloaded RNAseq libraries
+    """
     input:
         rules.fasterq_dump.output
     output:
@@ -164,6 +188,9 @@ rule gzip_fastq:
         """
 
 rule build_star:
+    """
+    Build STAR Database from softmasked haploid mapping reference assembly
+    """
     input:
         masked_genome = rules.repeat_masker.output.fasta 
     output:
@@ -184,6 +211,10 @@ rule build_star:
         """
 
 rule align_star:
+    """
+    Align downloaded RNAseq reads to softmasked haploid reference assembly using STAR in two-pass mode.
+    Set max intron length to 10000.
+    """
     input:
         star_build = rules.build_star.output,
         R1 = rules.gzip_fastq.output.R1,
@@ -215,6 +246,9 @@ rule align_star:
 ###############################
 
 rule viridiplantae_orthodb:
+    """
+    Download Green Plant (i.e., Viridiplantae) OrthoDB
+    """
     output:
         Plant_ProrteinDB = f"{PROGRAM_RESOURCE_DIR}/orthodb/Viridiplantae_protein.fasta"
     log: LOG_DIR + "/orthodb/ortho.log"
@@ -228,6 +262,9 @@ rule viridiplantae_orthodb:
         """
 
 rule download_uniprot_fabaceae_db:
+    """
+    Download all Fabaceae proteins from UniProtKB
+    """
     output:
         f'{PROGRAM_RESOURCE_DIR}/uniprot/fabaceae_proteins.fasta'
     log: LOG_DIR + '/uniprot_download/fabaceae_proteins_dl.log'
@@ -239,6 +276,9 @@ rule download_uniprot_fabaceae_db:
         """
 
 rule combine_protein_dbs:
+    """
+    Combine the Green Plant OrthoDB and Fabaceae UniProKB protein databases. This will be used as input to BRAKER in protein mode. 
+    """
     input:
         ortho = rules.viridiplantae_orthodb.output,
         fab = rules.download_uniprot_fabaceae_db.output
@@ -250,6 +290,9 @@ rule combine_protein_dbs:
         """
 
 rule braker_protein:
+    """
+    Run BRAKER in protein-mode
+    """
     input:
         proteins = rules.combine_protein_dbs.output,
         masked_genome = rules.repeat_masker.output.fasta,
@@ -277,6 +320,9 @@ rule braker_protein:
         """ 
 
 rule count_uniprot_seqs:
+    """
+    Counts uniprot proteins by taxonomic group
+    """
     input:
         rules.download_uniprot_fabaceae_db.output
     output:
@@ -287,6 +333,9 @@ rule count_uniprot_seqs:
         "../notebooks/count_uniprot_seqs.py.ipynb"
 
 rule merge_rnaseq_bams:
+    """
+    Merges STAR-aligned RNAseq reads into a single BAM file. This will be used as input to BRAKER in RNAseq-mode
+    """
     input:
         Star_Bam = expand(rules.align_star.output, acc=RNASEQ_ACCESSIONS),
     output:
@@ -302,6 +351,9 @@ rule merge_rnaseq_bams:
         """
 
 rule braker_rnaseq:
+    """
+    Run BRAKER in RNAseq-mode
+    """
     input:
         masked_genome = rules.repeat_masker.output.fasta,
         bam = rules.merge_rnaseq_bams.output.bam
@@ -327,6 +379,9 @@ rule braker_rnaseq:
         """
 
 rule tsebra_combine:
+    """
+    Combine evidence from BRAKER Rnaseq and BRAKER protein using TSEBRA
+    """
     input:
         rules.braker_protein.output,
         rules.braker_rnaseq.output,
@@ -349,6 +404,9 @@ rule tsebra_combine:
         """ 
 
 rule rename_tsebra_gtf:
+    """
+    Rename genes in combined TSEBRA GTF
+    """
     input:
         rules.tsebra_combine.output
     output:
@@ -369,6 +427,9 @@ rule rename_tsebra_gtf:
 ###############################
 
 rule remove_features_and_organelles:
+    """
+    Remove organellar annotations and all features exect CDS. Required since BRAKER-generated GTFs are not compatible with most downstream software out-of-the box
+    """
     input:
         rules.rename_tsebra_gtf.output
     output:
@@ -387,6 +448,9 @@ rule remove_features_and_organelles:
                         fout.write(line)
 
 rule gtf_to_gff:
+    """
+    Convert BRAKER-generated GTF to GFF3 using AGAT
+    """
     input:
         rules.remove_features_and_organelles.output
     output:
@@ -400,6 +464,9 @@ rule gtf_to_gff:
         """
 
 rule gff_sort:
+    """
+    Sort GFF3 using genome tools
+    """
     input:
         rules.gtf_to_gff.output
     output:
@@ -412,6 +479,9 @@ rule gff_sort:
         """
 
 rule reformat_gff:
+    """
+    Fix transcript IDs for genes with alternative mRNA isoforms and remove transcript_id from gene features
+    """
     input:
         rules.gff_sort.output
     output:
@@ -444,6 +514,9 @@ rule reformat_gff:
 
 
 rule get_proteins:
+    """
+    Get protein FASTA file using gffread
+    """
     input:
         gff = rules.reformat_gff.output,
         ref = rules.repeat_masker.output.fasta
@@ -461,6 +534,9 @@ rule get_proteins:
 ###############################
 
 rule run_interproscan:
+    """
+    Generate functional annotations using InterProScan
+    """
     input:
         data = IPRSCAN_DATA,
         prot = rules.get_proteins.output
@@ -485,6 +561,9 @@ rule run_interproscan:
         """ 
 
 rule funannotate_setup:
+    """
+    Download Databases for Funannotate
+    """
     output:
         directory(f"{ANNOTATION_DIR}/funannotate/fun_db")
     log: LOG_DIR + '/funannotate/funannotate_setup.log'
@@ -495,6 +574,9 @@ rule funannotate_setup:
         """
 
 rule dl_eggnog_db:
+    """
+    Download databases for EggNog-mapper
+    """
     output:
         directory(f"{ANNOTATION_DIR}/eggnog/eggnog_db")
     conda: '../envs/eggnog.yaml'
@@ -505,6 +587,9 @@ rule dl_eggnog_db:
         """
 
 rule run_eggnog_mapper:
+    """
+    Generate functional annotations using Eggnog-mapper
+    """
     input:
         prot = rules.get_proteins.output,
         db = rules.dl_eggnog_db.output
@@ -526,6 +611,9 @@ rule run_eggnog_mapper:
         """
 
 rule split_fasta_toChroms_andOrganelles:
+    """
+    Split Softmasked FASTA file into separate chromosomal and organellar FASTA files
+    """
     input:
        rules.repeat_masker.output.fasta
     output:
@@ -543,6 +631,9 @@ rule split_fasta_toChroms_andOrganelles:
         """
 
 rule funannotate_annotate:
+    """
+    Use Funannotate to combine InterProScan and Eggnog annotations and generate additional functional annotations
+    """
     input:
         enm = rules.run_eggnog_mapper.output.annot,
         gff = rules.reformat_gff.output, 
@@ -581,6 +672,9 @@ rule funannotate_annotate:
         """
 
 rule download_ec_numbers:
+    """
+    Download Enzyme Commission numbers from ExPASSY
+    """
     output:
         f"{PROGRAM_RESOURCE_DIR}/EC_numbers/enzyme.dat"
     params:
@@ -592,6 +686,10 @@ rule download_ec_numbers:
         """
 
 rule fixEC_CDSincrement_locusTags:
+    """
+    Remap Hypothetical Proteins based on fully-resolved EC Numbers. Delete EC Number of not fully-resolved.
+    Increment CDS IDs so they're unique.
+    """
     input:
         gff = rules.funannotate_annotate.output.gff3,
         ec = rules.download_ec_numbers.output
@@ -604,6 +702,9 @@ rule fixEC_CDSincrement_locusTags:
         "../scripts/python/fixEC_CDSincrement_locusTags.py"
 
 rule fixAtts_stopCodons:
+    """
+    Fix product annotations and reassign attributes based on NCBI input GFF3 requirements
+    """
     input:
         gff = rules.fixEC_CDSincrement_locusTags.output
     output:
@@ -614,6 +715,9 @@ rule fixAtts_stopCodons:
         "../scripts/python/fixAtts_stopCodons.py"
 
 rule gff_sort_functional:
+    """
+    Sort GFF3 with functional annotations using GFF3_sort Perl script. Can't use genometools here since sorting not compatible with table2asn
+    """
     input:
         rules.fixAtts_stopCodons.output.gff
     output:
@@ -626,6 +730,9 @@ rule gff_sort_functional:
         """
 
 rule split_chromosomal_fasta:
+    """
+    Get separate FASTA for each chromosome
+    """
     input:
         rules.split_fasta_toChroms_andOrganelles.output.chroms
     output:
@@ -637,6 +744,9 @@ rule split_chromosomal_fasta:
         """
 
 rule download_tableToAsn:
+    """
+    Download NCBI's table2asn program
+    """
     output:
         'table2asn'
     params:
@@ -650,6 +760,9 @@ rule download_tableToAsn:
         """
 
 rule tableToAsn_haploid:
+    """
+    Run table2asn in parallel across chromosomes to generate NCBI Sequin (i.e., .sqn) files for upload to submission portal
+    """
     input:
         gff = rules.gff_sort_functional.output,
         sbt = NCBI_TEMPLATE,

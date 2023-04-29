@@ -1,6 +1,11 @@
 # Rules to assess minimap between the haplotypes within subsegenomes
 
 rule minimap_hap_vs_hap_paf:
+    """
+    Maps each haplotype against the other using Minimap. This is done for the raw original haplotypes, and the revised haplotypes following manual fixes. 
+
+    The alignments for the raw haplotypes were used for QC, identifying misallignments, and identifying scaffolds to fill gaps in the original haplotypes. Used to generate dotplots in figure S1. 
+    """
     input:
         unpack(get_minimap_hap_vs_hap_input_files)
     output:
@@ -16,6 +21,9 @@ rule minimap_hap_vs_hap_paf:
         """
 
 rule minimap_hap_vs_TrRvFive:
+    """
+    Maps each haplotype against the previous white clover assembly using Minimap. Used for assessing correspondance between previous chromosomes and chromosomes in the new haplotype assemblies. 
+    """
     input:
         hap = get_haplotype_fasta,
         TrR_five = TRR_FIVE_FASTA 
@@ -32,6 +40,9 @@ rule minimap_hap_vs_TrRvFive:
         """
 
 rule dotplot_hap_vs_hap:
+    """
+    Generate simple dotplot of alignments of one haplotype mapped against the other.
+    """
     input:
         rules.minimap_hap_vs_hap_paf.output
     output:

@@ -1,6 +1,9 @@
 # Rule to QC original Dovetail haplotypes, revised haplotypes, and final assemblies
 
 rule quast_haploid_ref:
+    """
+    Use QUAST to QC the haploid reference assembly
+    """
     input:
         fasta = rules.repeat_masker.output.fasta,
         gff = f"{rules.funannotate_annotate.output}/annotate_results/Trifolium_repens.gff3"
@@ -21,6 +24,9 @@ rule quast_haploid_ref:
         """
 
 rule quast_diploid_ref:
+    """
+    Use QUAST do QC the phased diploid assembly.
+    """
     input:
         rules.create_reference_assemblies.output[1],
         rules.create_reference_assemblies.output[2]
@@ -40,6 +46,9 @@ rule quast_diploid_ref:
         """
 
 rule run_busco:
+    """
+    Assess annotation completeness by running BUSCO against both the embryophyta and Fabales databases.
+    """
     input:
         prot = f"{rules.funannotate_annotate.output}/annotate_results/Trifolium_repens.proteins.fa"
     output:

@@ -1,6 +1,9 @@
 # Rules to create haploid reference assembly and phased diploid assembly for annotation and publishing.
 
 rule fix_haplotypes:
+    """
+    Imposes manual fixes of raw Dovetail haplotypes and generates FASTA files with revised haplotype sequences. 
+    """
     input:
         [HAPLOTYPE_FASTA_DIR + f"/{hap}.agp" for hap in HAPS],
         [HAPLOTYPE_FASTA_DIR + f"/{hap}.fasta" for hap in HAPS],
@@ -13,6 +16,11 @@ rule fix_haplotypes:
         "../notebooks/fix_assembly_issues.py.ipynb"
 
 rule TrRvSix_vs_TrRvFive_and_LG:
+    """
+    Determines which of the revised haplotypes correspond to which chromosome based on (1) minimap alignments to previous reference genome from Griffiths et al. (2019) and (2) blast alignments of linkage markers from Olsen et. al (2022) F2 mapping population to each haplotype. 
+
+    Produces a number of outputs used to later generate the reference assemblies including: (1) Plot of number of BLAST hits for each linkage group and subgenome, (2) CSV file with lengths of each chromosome in new haplotypes, (3) CSV file with longest chromosome from each of the two haplotypes for each chromosome, (4) Plot of alignments to previous assembly to determine correct orientation of chromosomes, (5) CSV file with list of chromosomes that need to be reverse complemented to match previous assembly. 
+        """
     input:
         expand(rules.blast_markers.output, hap=HAPS, map_pop=['SG','DG']),
         f"{GENMAP_RESOURCE_DIR}/DG_marker_key.csv",
@@ -34,6 +42,9 @@ rule TrRvSix_vs_TrRvFive_and_LG:
         "../notebooks/TrRvSix_vs_TrRvFive_and_LG.r.ipynb"
 
 rule create_reference_assemblies:
+    """
+    Creates haploid mapping reference assembly and phased diploid assembly from revised haplotype sequences.
+    """
     input:
         rules.fix_haplotypes.output,
         f'{QC_DIR}/TrRv6_vs_TrR5_and_LG/TrR_v5_to_v6_chromosomeMapping.csv',

@@ -1,6 +1,9 @@
 # Rules for finding and working with HCN loci in the new Haplotype-resolved assembly
 
 rule makeblastdb_fromHaplotypeFasta:
+    """
+    Creates BLAST Database from revised haplotype sequences.
+    """
     input:
         f"{REVISED_HAP_DIR}/{{hap}}_revised.fasta"
     output:
@@ -19,6 +22,9 @@ rule makeblastdb_fromHaplotypeFasta:
         """
 
 rule blast_markers:
+    """
+    BLASTs linkage markers from Olsen et al. (2022) F2 mapping populations against the revised haplptypes. Used to determine linkage groups and chromosomes. 
+    """
     input:
         markers = ancient(f'{GENMAP_RESOURCE_DIR}/{{map_pop}}_tags.fa'),
         db_flag = rules.makeblastdb_fromHaplotypeFasta.output,
@@ -44,6 +50,9 @@ rule blast_markers:
         """
 
 rule blast_hcn_loci:
+    """
+    BLAST known sequences for HCN loci against the revised haplptypes to identify which haplotypes contain functional copies of Ac and Li.
+    """
     input:
         db = rules.makeblastdb_fromHaplotypeFasta.output,
         query = HCN_LOCI_FASTA
@@ -68,6 +77,9 @@ rule blast_hcn_loci:
         """
 
 rule blast_organelle_seqs:
+    """
+    BLAST known mitochondrial and chloroplast sequences against the revised haplotypes to identify which scaffolds correspond to the organelles in each haplotype FASTA.
+    """
     input:
         db = rules.makeblastdb_fromHaplotypeFasta.output,
         query = ORGANELLE_SEQS
