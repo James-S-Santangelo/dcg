@@ -307,19 +307,6 @@ rule braker_protein:
             --species "Trifolium repens prot" 2> {log}
         """ 
 
-rule count_uniprot_seqs:
-    """
-    Counts uniprot proteins by taxonomic group
-    """
-    input:
-        rules.download_uniprot_fabaceae_db.output
-    output:
-        f"{ANNOTATION_DIR}/uniprotSeqs_byTaxon.txt"
-    conda: '../envs/notebooks.yaml'
-    log: LOG_DIR + '/notebooks/count_uniprot_seqs_processed.ipynb'
-    notebook:
-        "../notebooks/count_uniprot_seqs.py.ipynb"
-
 rule merge_rnaseq_bams:
     """
     Merges STAR-aligned RNAseq reads into a single BAM file. This will be used as input to BRAKER in RNAseq-mode
