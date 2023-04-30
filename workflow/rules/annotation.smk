@@ -96,11 +96,11 @@ rule repeat_masker:
         lib = rules.merge_repeat_databases.output,
         fasta = rules.create_reference_assemblies.output[0]
     output:
-        fasta = f"{ANNOTATION_DIR}/repeat_masker/TrR_v6_haploid_reference_softMasked.fasta",
-        cat = f"{ANNOTATION_DIR}/repeat_masker/TrR_v6_haploid_reference_repeatMasker.cat.gz",
-        out = f"{ANNOTATION_DIR}/repeat_masker/TrR_v6_haploid_reference_repeatMasker.out",
-        gff = f"{ANNOTATION_DIR}/repeat_masker/TrR_v6_haploid_reference_repeatMasker.gff",
-        stats = f"{ANNOTATION_DIR}/repeat_masker/TrR_v6_haploid_reference_repeatMasker.tbl"
+        fasta = f"{ANNOTATION_DIR}/repeat_masker/{ASSEMBLY_NAME}_haploid_reference_softMasked.fasta",
+        cat = f"{ANNOTATION_DIR}/repeat_masker/{ASSEMBLY_NAME}_haploid_reference_repeatMasker.cat.gz",
+        out = f"{ANNOTATION_DIR}/repeat_masker/{ASSEMBLY_NAME}_haploid_reference_repeatMasker.out",
+        gff = f"{ANNOTATION_DIR}/repeat_masker/{ASSEMBLY_NAME}_haploid_reference_repeatMasker.gff",
+        stats = f"{ANNOTATION_DIR}/repeat_masker/{ASSEMBLY_NAME}_haploid_reference_repeatMasker.tbl"
     threads: 48
     container: 'docker://dfam/tetools:1.6'
     log: LOG_DIR + '/repeat_masker/repeat_masker.log'
@@ -442,7 +442,7 @@ rule gtf_to_gff:
     input:
         rules.removeOrganelles_keepCDSonly.output
     output:
-        f"{ANNOTATION_DIR}/cleand/UTM_Trep_v1.0_structural.gff"
+        f"{ANNOTATION_DIR}/cleaned/UTM_Trep_v1.0_structural.gff"
     container: 'docker://quay.io/biocontainers/agat:1.0.0--pl5321hdfd78af_0'
     log: LOG_DIR + '/gtf_to_gff/gtf_to_gff.log'
     shell:
@@ -473,7 +473,7 @@ rule fix_transcriptID_attribute:
     input:
         rules.sort_structuralGFF.output
     output:
-        f"{ANNOTATION_DIR}/cleaned/UTM_Trep_v1.0_structural_sorted_reformated.gff"
+        f"{ANNOTATION_DIR}/cleaned/UTM_Trep_v1.0_structural_sorted_fixTranscriptID.gff"
     run:
         with open(input[0], 'r') as fin:
             with open(output[0], 'w') as fout:
@@ -529,12 +529,12 @@ rule run_interproscan:
         data = IPRSCAN_DATA,
         prot = rules.get_proteins.output
     output:
-        gff =  f"{ANNOTATION_DIR}/interproscan/TrR_v6_interproscan.gff3",
-        xml =  f"{ANNOTATION_DIR}/interproscan/TrR_v6_interproscan.xml"
+        gff =  f"{ANNOTATION_DIR}/interproscan/{ASSEMBLY_NAME}_interproscan.gff3",
+        xml =  f"{ANNOTATION_DIR}/interproscan/{ASSEMBLY_NAME}_interproscan.xml"
     log: LOG_DIR + '/interproscan/run_interproscan.log'
     threads: 24
     params:
-        out_base =  f"{ANNOTATION_DIR}/interproscan/TrR_v6_interproscan"
+        out_base =  f"{ANNOTATION_DIR}/interproscan/{ASSEMBLY_NAME}_interproscan"
     container: 'library://james-s-santangelo/interproscan/interproscan:5.61-93.0' 
     shell:
         """
@@ -582,12 +582,12 @@ rule run_eggnog_mapper:
         prot = rules.get_proteins.output,
         db = rules.dl_eggnog_db.output
     output:
-        annot = f"{ANNOTATION_DIR}/eggnog/TrR_v6.emapper.annotations"
+        annot = f"{ANNOTATION_DIR}/eggnog/{ASSEMBLY_NAME}.emapper.annotations"
     log: LOG_DIR + '/eggnog/aggnog_mapper.log'
     threads: 24
     conda: '../envs/eggnog.yaml'
     params:
-        out = f"{ANNOTATION_DIR}/eggnog/TrR_v6"
+        out = f"{ANNOTATION_DIR}/eggnog/{ASSEMBLY_NAME}"
     shell:
         """
         emapper.py -i {input.prot} \
@@ -605,9 +605,9 @@ rule split_fasta_toChroms_andOrganelles:
     input:
        rules.repeat_masker.output.fasta
     output:
-        chroms = f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/TrR_v6_chromsOnly.fasta", 
-        mito = f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/TrR_v6_mitochondria.fasta", 
-        cp = f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/TrR_v6_chloroplast.fasta"
+        chroms = f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/{ASSEMBLY_NAME}_chromsOnly.fasta", 
+        mito = f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/{ASSEMBLY_NAME}_mitochondria.fasta", 
+        cp = f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/{ASSEMBLY_NAME}_chloroplast.fasta"
     conda: '../envs/annotation.yaml'
     params:
         chroms = 'Chr01_Occ Chr01_Pall Chr02_Occ Chr02_Pall Chr03_Occ Chr03_Pall Chr04_Occ Chr04_Pall Chr05_Occ Chr05_Pall Chr06_Occ Chr06_Pall Chr07_Occ Chr07_Pall Chr08_Occ Chr08_Pall'
@@ -682,7 +682,7 @@ rule fixEC_incrementCDS_addLocusTags:
         gff = rules.funannotate_annotate.output.gff3,
         ec = rules.download_ec_numbers.output
     output:
-        f"{ANNOTATION_DIR}/UTM_Trep_v1.0_functional_ECfix_wLocusTags.gff"
+        f"{ANNOTATION_DIR}/{ASSEMBLY_NAME}_functional_ECfix_wLocusTags.gff"
     conda: '../envs/gffutils.yaml'
     params:
         locus_tag = 'P8452'
@@ -696,8 +696,8 @@ rule fixProducts_ncbiErrors:
     input:
         gff = rules.fixEC_incrementCDS_addLocusTags.output
     output:
-        db = f"{PROGRAM_RESOURCE_DIR}/gffutils/UTM_Trep_v1.0.gffdb",
-        gff = f"{ANNOTATION_DIR}/UTM_Trep_v1.0_functional_final.gff3"
+        db = f"{PROGRAM_RESOURCE_DIR}/gffutils/{ASSEMBLY_NAME}.gffdb",
+        gff = f"{ANNOTATION_DIR}/{ASSEMBLY_NAME}_functional_final.gff3"
     conda: '../envs/gffutils.yaml'
     script:
         "../scripts/python/fixProducts_ncbiErrors.py"
@@ -709,7 +709,7 @@ rule gff_sort_functional:
     input:
         rules.fixProducts_ncbiErrors.output.gff
     output:
-        f"{ANNOTATION_DIR}/UTM_Trep_v1.0_functional_final_sorted.gff3"
+        f"{ANNOTATION_DIR}/{ASSEMBLY_NAME}_functional_final_sorted.gff3"
     log: LOG_DIR + '/gff_sort/gff_sort_functional.log'
     conda: '../envs/gffutils.yaml'
     shell:
