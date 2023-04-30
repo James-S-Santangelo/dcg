@@ -157,9 +157,6 @@ rule fasterq_dump:
     params:
         outdir = f"{ANNOTATION_DIR}/rnaseq_reads"
     threads: 6
-    resources:
-        mem_mb = lambda wildcards, attempt: attempt * 2000,
-        time = lambda wildcards, attempt: str(attempt * 2) + ":00:00" 
     shell:
         """
         cd {params.outdir}
@@ -179,9 +176,6 @@ rule gzip_fastq:
         R1 = temp(f"{ANNOTATION_DIR}/rnaseq_reads/{{acc}}_1.fastq.gz"),
         R2 = temp(f"{ANNOTATION_DIR}/rnaseq_reads/{{acc}}_2.fastq.gz")
     log: LOG_DIR + '/gzip_fastq/{acc}_gzip.log'
-    resources:
-        mem_mb = lambda wildcards, attempt: attempt * 2000,
-        time = lambda wildcards, attempt: str(attempt * 2) + ":00:00"
     shell:
         """
         gzip {input} 2> {log} 
@@ -198,9 +192,6 @@ rule build_star:
     log: LOG_DIR + '/star/star_build.log'
     conda:'../envs/annotation.yaml'
     threads: 8
-    resources:
-        mem_mb = lambda wildcards, attempt: attempt * 15000,
-        time = "1:00:00"
     shell:
         """
         mkdir {output}
@@ -226,9 +217,6 @@ rule align_star:
     params:
         out = f"{ANNOTATION_DIR}/star/star_align/{{acc}}/{{acc}}_"
     threads: 6
-    resources:
-        mem_mb = lambda wildcards, attempt: attempt * 20000,
-        time = lambda wildcards, attempt: str(attempt * 12) + ":00:00"
     shell:
         """
         STAR --readFilesIn {input.R1} {input.R2} \
