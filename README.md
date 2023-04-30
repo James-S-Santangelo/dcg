@@ -40,12 +40,12 @@ Assuming `Conda` is installed, the this repository's Conda environment can be re
 conda env create -f environment.yaml -n dcg 
 ```
 
-This will create a Conda environment named dcgcontaining a minimal set of dependencies required to run the pipeline (e.g., Python 3.8.6 and Snakemake 6.9.1). This environment additinally contains dependencies to run Jupter Notebooks (e.g., Jupyter + R and associated packages).
+This will create a `Conda` environment named dcgcontaining a minimal set of dependencies required to run the pipeline. 
 
-After activating the environment (conda activate dcg), the pipeline can be executed from the workflow directory by running a command that looks something like:
+After activating the environment (`conda activate dcg``), the pipeline can be executed from the workflow directory by running a command that looks something like:
 
 ```
 snakemake --use-conda --use-singularity --singularity-args "--bind <path> --bind <path/to/interproscan/data>:/opt/interproscan-5.61-93.0/data" --configfile ../config/<configfile> --notemp -j <cores>
 ```
 
-for local execution. Here, <path> is the path on the cluster from which files will be read/written (e.g., /scratch), <path/to/interproscan/data> is the full path to the interproscan data in [resources/](./resources), <configfile> is one of the configfiles in the config directory that needs to be modified to match the paths on your system, and <cores> is the number of cores available for executing parallel processes.
+for local execution. Here, `<path>` is the path on the cluster from which files will be read/written (e.g., `/scratch`), `<path/to/interproscan/data>` is the full path to the interproscan data in [resources/](./resources), `<configfile>` is one of the configfiles in the config directory that needs to be modified to match the paths on your system, and `<cores>` is the number of cores available for executing parallel processes.
