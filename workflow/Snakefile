@@ -27,12 +27,7 @@ TRR_FIVE_SCAFFS = f"{RESOURCES}/TrR_v5_scaff_byLG.csv"
 TRR_FIVE_FASTA = config['TrR_five_fasta']
 NCBI_TEMPLATE = f"{RESOURCES}/ncbi_template.sbt" 
 CHROMOSOMES = pd.read_table(f"{RESOURCES}/chromosome_file.txt", header=None).iloc[:,0].tolist()
-
 RNASEQ_ACCESSIONS = pd.read_csv(f"{RESOURCES}/Trepens_rnaseq_accessions_select.txt", sep = '\t')['accession'].tolist()
-KOOYERS_RNASEQ = [f for f in os.listdir(config['kooyers_rnaseq']) if f.startswith('TR')]
-
-# Variables for specific rules
-ALL_RNASEQ_SAMPLES = RNASEQ_ACCESSIONS + KOOYERS_RNASEQ
 
 # Paths for output files
 LOG_DIR = config['log_prefix']
@@ -48,7 +43,7 @@ NCBI_DIR = f"{config['results_prefix']}/ncbi"
 HAP_VS_HAP = [f'{i}-{j}' for i in HAPS for j in HAPS if i != j]
 
 wildcard_constraints:
-    acc = '|'.join(ALL_RNASEQ_SAMPLES)
+    acc = '|'.join(RNASEQ_ACCESSIONS)
 
 include: 'rules/common.smk'
 

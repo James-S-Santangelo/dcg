@@ -15,14 +15,14 @@ rule fix_haplotypes:
     notebook:
         "../notebooks/fix_assembly_issues.py.ipynb"
 
-rule TrRvSix_vs_TrRvFive_and_LG:
+rule identify_chromosomes_linkageGroups:
     """
     Determines which of the revised haplotypes correspond to which chromosome based on (1) minimap alignments to previous reference genome from Griffiths et al. (2019) and (2) blast alignments of linkage markers from Olsen et. al (2022) F2 mapping population to each haplotype. 
 
     Produces a number of outputs used to later generate the reference assemblies including: (1) Plot of number of BLAST hits for each linkage group and subgenome, (2) CSV file with lengths of each chromosome in new haplotypes, (3) CSV file with longest chromosome from each of the two haplotypes for each chromosome, (4) Plot of alignments to previous assembly to determine correct orientation of chromosomes, (5) CSV file with list of chromosomes that need to be reverse complemented to match previous assembly. 
         """
     input:
-        expand(rules.blast_markers.output, hap=HAPS, map_pop=['SG','DG']),
+        expand(rules.blast_linkageMarkers.output, hap=HAPS, map_pop=['SG','DG']),
         f"{GENMAP_RESOURCE_DIR}/DG_marker_key.csv",
         f"{GENMAP_RESOURCE_DIR}/SG_marker_key.csv",
         f"{GENMAP_RESOURCE_DIR}/DG_genMap.csv",
@@ -47,9 +47,9 @@ rule create_reference_assemblies:
     """
     input:
         rules.fix_haplotypes.output,
-        f'{QC_DIR}/TrRv6_vs_TrR5_and_LG/TrR_v5_to_v6_chromosomeMapping.csv',
-        f'{QC_DIR}/TrRv6_vs_TrR5_and_LG/TrR_v6_chromosomesToReverseComplement.csv',
-        f'{QC_DIR}/TrRv6_vs_TrR5_and_LG/TrR_v6_scaffoldLengths_bySubGenome_and_Hap.csv'
+        rules.identify_chromosomes_linkageGroups.output[3],
+        rules.identify_chromosomes_linkageGroups.output[5],
+        rules.identify_chromosomes_linkageGroups.output[1]
     output:
         f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/TrR_v6_haploid_reference.fasta",
         f"{REFERENCE_ASSEMBLIES_DIR}/diploid_reference/TrR_v6_hap1_reference.fasta",

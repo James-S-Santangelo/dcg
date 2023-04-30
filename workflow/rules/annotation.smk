@@ -414,7 +414,7 @@ rule rename_tsebra_gtf:
 #### CLEAN & TRANSFORM GTF ####
 ###############################
 
-rule remove_features_and_organelles:
+rule removeOrganelles_keepCDSonly:
     """
     Remove organellar annotations and all features exect CDS. Required since BRAKER-generated GTFs are not compatible with most downstream software out-of-the box
     """
@@ -440,7 +440,7 @@ rule gtf_to_gff:
     Convert BRAKER-generated GTF to GFF3 using AGAT
     """
     input:
-        rules.remove_features_and_organelles.output
+        rules.removeOrganelles_keepCDSonly.output
     output:
         f"{ANNOTATION_DIR}/cleand/UTM_Trep_v1.0_structural.gff"
     container: 'docker://quay.io/biocontainers/agat:1.0.0--pl5321hdfd78af_0'
@@ -451,7 +451,7 @@ rule gtf_to_gff:
             --output {output} &> {log}
         """
 
-rule gff_sort:
+rule sort_structuralGFF:
     """
     Sort GFF3 using genome tools
     """
@@ -466,12 +466,12 @@ rule gff_sort:
         gt gff3 -sort -tidy -retainids {input} > {output} 2> {log}
         """
 
-rule reformat_gff:
+rule fix_transcriptID_attribute:
     """
     Fix transcript IDs for genes with alternative mRNA isoforms and remove transcript_id from gene features
     """
     input:
-        rules.gff_sort.output
+        rules.sort_structuralGFF.output
     output:
         f"{ANNOTATION_DIR}/cleaned/UTM_Trep_v1.0_structural_sorted_reformated.gff"
     run:
@@ -506,7 +506,7 @@ rule get_proteins:
     Get protein FASTA file using gffread
     """
     input:
-        gff = rules.reformat_gff.output,
+        gff = rules.fix_transcriptID_attribute.output,
         ref = rules.repeat_masker.output.fasta
     output:
         f"{ANNOTATION_DIR}/UTM_Trep_v1.0_proteins.fasta"
@@ -624,7 +624,7 @@ rule funannotate_annotate:
     """
     input:
         enm = rules.run_eggnog_mapper.output.annot,
-        gff = rules.reformat_gff.output, 
+        gff = rules.fix_transcriptID_attribute.output, 
         ref = rules.split_fasta_toChroms_andOrganelles.output.chroms,
         iprs = rules.run_interproscan.output.xml,
         db = rules.funannotate_setup.output 
@@ -673,7 +673,7 @@ rule download_ec_numbers:
         wget {params.url} --no-check-certificate -P {params.outdir}
         """
 
-rule fixEC_CDSincrement_locusTags:
+rule fixEC_incrementCDS_addLocusTags:
     """
     Remap Hypothetical Proteins based on fully-resolved EC Numbers. Delete EC Number of not fully-resolved.
     Increment CDS IDs so they're unique.
@@ -687,27 +687,27 @@ rule fixEC_CDSincrement_locusTags:
     params:
         locus_tag = 'P8452'
     script:
-        "../scripts/python/fixEC_CDSincrement_locusTags.py"
+        "../scripts/python/fixEC_incrementCDS_addLocusTags.py"
 
-rule fixAtts_stopCodons:
+rule fixProducts_ncbiErrors:
     """
     Fix product annotations and reassign attributes based on NCBI input GFF3 requirements
     """
     input:
-        gff = rules.fixEC_CDSincrement_locusTags.output
+        gff = rules.fixEC_incrementCDS_addLocusTags.output
     output:
         db = f"{PROGRAM_RESOURCE_DIR}/gffutils/UTM_Trep_v1.0.gffdb",
         gff = f"{ANNOTATION_DIR}/UTM_Trep_v1.0_functional_final.gff3"
     conda: '../envs/gffutils.yaml'
     script:
-        "../scripts/python/fixAtts_stopCodons.py"
+        "../scripts/python/fixProducts_ncbiErrors.py"
 
 rule gff_sort_functional:
     """
     Sort GFF3 with functional annotations using GFF3_sort Perl script. Can't use genometools here since sorting not compatible with table2asn
     """
     input:
-        rules.fixAtts_stopCodons.output.gff
+        rules.fixProducts_ncbiErrors.output.gff
     output:
         f"{ANNOTATION_DIR}/UTM_Trep_v1.0_functional_final_sorted.gff3"
     log: LOG_DIR + '/gff_sort/gff_sort_functional.log'

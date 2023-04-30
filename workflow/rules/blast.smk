@@ -21,7 +21,7 @@ rule makeblastdb_fromHaplotypeFasta:
             -out {params.outfile}
         """
 
-rule blast_markers:
+rule blast_linkageMarkers:
     """
     BLASTs linkage markers from Olsen et al. (2022) F2 mapping populations against the revised haplptypes. Used to determine linkage groups and chromosomes. 
     """
@@ -107,7 +107,7 @@ rule blast_done:
     input:
         expand(rules.blast_hcn_loci.output, hap=HAPS),
         expand(rules.blast_organelle_seqs.output, hap=HAPS),
-        expand(rules.blast_markers.output, hap=HAPS, map_pop=['SG','DG'])
+        expand(rules.blast_linkageMarkers.output, hap=HAPS, map_pop=['SG','DG'])
     output:
         f"{BLAST_DIR}/blast.done"
     shell:
