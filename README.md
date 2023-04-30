@@ -42,7 +42,7 @@ conda env create -f environment.yaml -n dcg
 
 This will create a `Conda` environment named dcgcontaining a minimal set of dependencies required to run the pipeline. 
 
-After activating the environment (`conda activate dcg``), the pipeline can be executed from the workflow directory by running a command that looks something like:
+After activating the environment (`conda activate dcg`), the pipeline can be executed from the workflow directory by running a command that looks something like:
 
 ```
 snakemake --use-conda --use-singularity --singularity-args "--bind <path> --bind <path/to/interproscan/data>:/opt/interproscan-5.61-93.0/data" --configfile ../config/<configfile> --notemp -j <cores>
