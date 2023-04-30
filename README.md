@@ -1,7 +1,7 @@
 ## Dovetail Clover Genome (DCG)
 
 - TODO: Link manuscript/preprint when available
-- TODO: Figure out where raw haplotype FASTAs will be hosted upon publishing (NCBI?)
+- TODO: Figure out where raw haplotype FASTAs, AGP files, and linkage markers will be hosted upon publishing (NCBI?)
 - TODO: Link to NCBI Bioprojects
 
 ### Manuscript: Chromosome-level, haplotype-resolved assembly of white clover (*Trifolium repens*)
