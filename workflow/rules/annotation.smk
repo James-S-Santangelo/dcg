@@ -442,7 +442,7 @@ rule gtf_to_gff:
     input:
         rules.removeOrganelles_keepCDSonly.output
     output:
-        f"{ANNOTATION_DIR}/cleaned/UTM_Trep_v1.0_structural.gff"
+        f"{ANNOTATION_DIR}/cleaned/{ASSEMBLY_NAME}_structural.gff"
     container: 'docker://quay.io/biocontainers/agat:1.0.0--pl5321hdfd78af_0'
     log: LOG_DIR + '/gtf_to_gff/gtf_to_gff.log'
     shell:
@@ -458,7 +458,7 @@ rule sort_structuralGFF:
     input:
         rules.gtf_to_gff.output
     output:
-        f"{ANNOTATION_DIR}/cleaned/UTM_Trep_v1.0_structural_sorted.gff"
+        f"{ANNOTATION_DIR}/cleaned/{ASSEMBLY_NAME}_structural_sorted.gff"
     log: LOG_DIR + '/gff_sort/gff_sort.log'
     conda: '../envs/annotation.yaml'
     shell:
@@ -473,7 +473,7 @@ rule fix_transcriptID_attribute:
     input:
         rules.sort_structuralGFF.output
     output:
-        f"{ANNOTATION_DIR}/cleaned/UTM_Trep_v1.0_structural_sorted_fixTranscriptID.gff"
+        f"{ANNOTATION_DIR}/cleaned/{ASSEMBLY_NAME}_structural_sorted_fixTranscriptID.gff"
     run:
         with open(input[0], 'r') as fin:
             with open(output[0], 'w') as fout:
@@ -509,7 +509,7 @@ rule get_proteins:
         gff = rules.fix_transcriptID_attribute.output,
         ref = rules.repeat_masker.output.fasta
     output:
-        f"{ANNOTATION_DIR}/UTM_Trep_v1.0_proteins.fasta"
+        f"{ANNOTATION_DIR}/{ASSEMBLY_NAME}_proteins.fasta"
     log: LOG_DIR + '/get_proteins/get_proteins.log'
     container: 'docker://teambraker/braker3'
     shell:
