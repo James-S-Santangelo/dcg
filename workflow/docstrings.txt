@@ -1,0 +1,112 @@
+TrRvSix_vs_TrRvFive_and_LG
+    Determines which of the revised haplotypes correspond to which chromosome based on (1) minimap alignments to previous reference genome from Griffiths et al. (2019) and (2) blast alignments of linkage markers from Olsen et. al (2022) F2 mapping population to each haplotype. 
+
+    Produces a number of outputs used to later generate the reference assemblies including: (1) Plot of number of BLAST hits for each linkage group and subgenome, (2) CSV file with lengths of each chromosome in new haplotypes, (3) CSV file with longest chromosome from each of the two haplotypes for each chromosome, (4) Plot of alignments to previous assembly to determine correct orientation of chromosomes, (5) CSV file with list of chromosomes that need to be reverse complemented to match previous assembly.
+align_star
+    Align downloaded RNAseq reads to softmasked haploid reference assembly using STAR in two-pass mode.
+    Set max intron length to 10000.
+all
+annotation_done
+blast_done
+blast_hcn_loci
+    BLAST known sequences for HCN loci against the revised haplptypes to identify which haplotypes contain functional copies of Ac and Li.
+blast_markers
+    BLASTs linkage markers from Olsen et al. (2022) F2 mapping populations against the revised haplptypes. Used to determine linkage groups and chromosomes.
+blast_organelle_seqs
+    BLAST known mitochondrial and chloroplast sequences against the revised haplotypes to identify which scaffolds correspond to the organelles in each haplotype FASTA.
+braker_protein
+    Run BRAKER in protein-mode
+braker_rnaseq
+    Run BRAKER in RNAseq-mode
+build_repeat_modeler_db
+    Build RepeatModeler Database from haploid mapping reference assembly
+build_star
+    Build STAR Database from softmasked haploid mapping reference assembly
+combine_protein_dbs
+    Combine the Green Plant OrthoDB and Fabaceae UniProKB protein databases. This will be used as input to BRAKER in protein mode.
+configure_repbase
+    Configure RepBase Database for use with RepeatModeler
+count_uniprot_seqs
+    Counts uniprot proteins by taxonomic group
+create_reference_assemblies
+    Creates haploid mapping reference assembly and phased diploid assembly from revised haplotype sequences.
+dl_eggnog_db
+    Download databases for EggNog-mapper
+dotplot_hap_vs_hap
+    Generate simple dotplot of alignments of one haplotype mapped against the other.
+download_ec_numbers
+    Download Enzyme Commission numbers from ExPASSY
+download_tableToAsn
+    Download NCBI's table2asn program
+download_uniprot_fabaceae_db
+    Download all Fabaceae proteins from UniProtKB
+fasterq_dump
+    Download pre-fetched RNAseq libraries used for structural gene annotation
+fixAtts_stopCodons
+    Fix product annotations and reassign attributes based on NCBI input GFF3 requirements
+fixEC_CDSincrement_locusTags
+    Remap Hypothetical Proteins based on fully-resolved EC Numbers. Delete EC Number of not fully-resolved.
+    Increment CDS IDs so they're unique.
+fix_haplotypes
+    Imposes manual fixes of raw Dovetail haplotypes and generates FASTA files with revised haplotype sequences.
+funannotate_annotate
+    Use Funannotate to combine InterProScan and Eggnog annotations and generate additional functional annotations
+funannotate_setup
+    Download Databases for Funannotate
+get_proteins
+    Get protein FASTA file using gffread
+gff_sort
+    Sort GFF3 using genome tools
+gff_sort_functional
+    Sort GFF3 with functional annotations using GFF3_sort Perl script. Can't use genometools here since sorting not compatible with table2asn
+gtf_to_gff
+    Convert BRAKER-generated GTF to GFF3 using AGAT
+gzip_fastq
+    Gzip downloaded RNAseq libraries
+makeblastdb_fromHaplotypeFasta
+    Creates BLAST Database from revised haplotype sequences.
+merge_repeat_databases
+    Merge de novo repeat library with Green Plant (i.e., Viridiplantae) repeat library from RepBase
+merge_rnaseq_bams
+    Merges STAR-aligned RNAseq reads into a single BAM file. This will be used as input to BRAKER in RNAseq-mode
+minimap_done
+minimap_hap_vs_TrRvFive
+    Maps each haplotype against the previous white clover assembly using Minimap. Used for assessing correspondance between previous chromosomes and chromosomes in the new haplotype assemblies.
+minimap_hap_vs_hap_paf
+    Maps each haplotype against the other using Minimap. This is done for the raw original haplotypes, and the revised haplotypes following manual fixes. 
+
+    The alignments for the raw haplotypes were used for QC, identifying misallignments, and identifying scaffolds to fill gaps in the original haplotypes. Used to generate dotplots in figure S1.
+prefetch
+    Pre-fetch RNAseq libraries that will be used for structural gene annotation
+qc_done
+quast_diploid_ref
+    Use QUAST do QC the phased diploid assembly.
+quast_haploid_ref
+    Use QUAST to QC the haploid reference assembly
+reference_assemblies_done
+reformat_gff
+    Fix transcript IDs for genes with alternative mRNA isoforms and remove transcript_id from gene features
+remove_features_and_organelles
+    Remove organellar annotations and all features exect CDS. Required since BRAKER-generated GTFs are not compatible with most downstream software out-of-the box
+rename_tsebra_gtf
+    Rename genes in combined TSEBRA GTF
+repeat_masker
+    Softmask repeats in the white clover haploid mapping reference assembly.
+repeat_modeler
+    Build de novo repeat library from haploid mapping reference assembly using RepeatModeler
+run_busco
+    Assess annotation completeness by running BUSCO against both the embryophyta and Fabales databases.
+run_eggnog_mapper
+    Generate functional annotations using Eggnog-mapper
+run_interproscan
+    Generate functional annotations using InterProScan
+split_chromosomal_fasta
+    Get separate FASTA for each chromosome
+split_fasta_toChroms_andOrganelles
+    Split Softmasked FASTA file into separate chromosomal and organellar FASTA files
+tableToAsn_haploid
+    Run table2asn in parallel across chromosomes to generate NCBI Sequin (i.e., .sqn) files for upload to submission portal
+tsebra_combine
+    Combine evidence from BRAKER Rnaseq and BRAKER protein using TSEBRA
+viridiplantae_orthodb
+    Download Green Plant (i.e., Viridiplantae) OrthoDB
