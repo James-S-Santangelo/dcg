@@ -711,7 +711,7 @@ rule split_chromosomal_fasta:
     input:
         rules.split_fasta_toChroms_andOrganelles.output.chroms
     output:
-        f"{NCBI_DIR}/haploid/{{chrom}}/{{chrom}}.fasta"
+        f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/split/{{chrom}}.fasta"
     conda: '../envs/annotation.yaml' 
     shell:
         """

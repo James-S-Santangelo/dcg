@@ -6,7 +6,7 @@ rule quast_haploid_ref:
     """
     input:
         fasta = rules.repeat_masker.output.fasta,
-        gff = f"{rules.funannotate_annotate.output}/annotate_results/Trifolium_repens.gff3"
+        gff = rules.funannotate_annotate.output.gff3
     output:
         directory(f"{QC_DIR}/quast/haploid")
     log: LOG_DIR + '/quast/quast_haploid.log'
@@ -28,8 +28,8 @@ rule quast_diploid_ref:
     Use QUAST do QC the phased diploid assembly.
     """
     input:
-        rules.create_reference_assemblies.output[1],
-        rules.create_reference_assemblies.output[2]
+        rules.create_reference_assemblies.output.dip_hap1,
+        rules.create_reference_assemblies.output.dip_hap2
     output:
         directory(f"{QC_DIR}/quast/diploid")
     log: LOG_DIR + '/quast/quast_diploid.log'
@@ -50,15 +50,15 @@ rule run_busco:
     Assess annotation completeness by running BUSCO against both the embryophyta and Fabales databases.
     """
     input:
-        prot = f"{rules.funannotate_annotate.output}/annotate_results/Trifolium_repens.proteins.fa"
+        prot = rules.funannotate_annotate.output.prot 
     output:
-        directory(f"{QC_DIR}/busco/TrR_v6_{{db}}")
+        directory(f"{QC_DIR}/busco/{ASSEMBLY_NAME}_{{db}}")
     log: LOG_DIR + '/busco/busco_{db}.log'
     conda: '../envs/qc.yaml'
     threads: 32
     params:
         out_path = f"{QC_DIR}/busco/",
-        out_name = "TrR_v6_{db}"
+        out_name = f"{ASSEMBLY_NAME}_{{db}}"
     shell:
         """
         busco -m protein \
