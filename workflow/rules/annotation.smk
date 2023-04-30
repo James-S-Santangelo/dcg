@@ -289,7 +289,7 @@ rule braker_protein:
         hints_prot = f"{ANNOTATION_DIR}/braker/proteins/hintsfile.gff"
     log: LOG_DIR + '/braker/proteins.log'
     params:
-        outputdir = f"{ANNOTATION_DIR}/braker/rnaseq",
+        outputdir = f"{ANNOTATION_DIR}/braker/proteins",
         genemark = GENEMARK,
         prothint = PROTHINT,
     threads: 30
