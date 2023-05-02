@@ -56,10 +56,12 @@ rule all:
         f'{REFERENCE_ASSEMBLIES_DIR}/reference_assemblies.done',
         f"{ANNOTATION_DIR}/annotation.done",
         f'{QC_DIR}/qc.done',
+        f"{FIGURES_DIR}/circos/gc/windowed_gc_content.txt",
+        expand(f"{FIGURES_DIR}/circos/{{feat}}/{{feat}}_count.txt", feat=['repeat', 'gene'])
 
 include: 'rules/minimap.smk'
 include: 'rules/blast.smk'
 include: 'rules/assemble_references.smk'
 include: 'rules/annotation.smk'
 include: 'rules/qc.smk'
-
+include: 'rules/circos.smk'

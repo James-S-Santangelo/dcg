@@ -592,9 +592,9 @@ rule split_fasta_toChroms_andOrganelles:
     input:
        rules.repeat_masker.output.fasta
     output:
-        chroms = f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/{ASSEMBLY_NAME}_chromsOnly.fasta", 
-        mito = f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/{ASSEMBLY_NAME}_mitochondria.fasta", 
-        cp = f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/{ASSEMBLY_NAME}_chloroplast.fasta"
+        chroms = f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/split/{ASSEMBLY_NAME}_chromsOnly.fasta", 
+        mito = f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/split/{ASSEMBLY_NAME}_mitochondria.fasta", 
+        cp = f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/split/{ASSEMBLY_NAME}_chloroplast.fasta"
     conda: '../envs/annotation.yaml'
     params:
         chroms = 'Chr01_Occ Chr01_Pall Chr02_Occ Chr02_Pall Chr03_Occ Chr03_Pall Chr04_Occ Chr04_Pall Chr05_Occ Chr05_Pall Chr06_Occ Chr06_Pall Chr07_Occ Chr07_Pall Chr08_Occ Chr08_Pall'
