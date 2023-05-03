@@ -1,6 +1,7 @@
 # Input files
 resources: ../resources
 TrR_five_fasta: /research/references/trifolium/repens/GCA_005869975.1_AgR_To_v5/GCA_005869975.1_AgR_To_v5_genomic.fna
+TrR_five_gtf: /research/references/trifolium/repens/GCA_005869975.1_AgR_To_v5/annotation_file/TrR.v5.renamed_reformated.gtf
 genemark: /home/santang3/downloads/gmes_linux_64_4
 prothint: /home/santang3/downloads/gmes_linux_64_4/ProtHint/bin
 
