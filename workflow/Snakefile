@@ -60,9 +60,7 @@ rule all:
         f'{REFERENCE_ASSEMBLIES_DIR}/reference_assemblies.done',
         f"{ANNOTATION_DIR}/annotation.done",
         f'{QC_DIR}/qc.done',
-        f"{FIGURES_DIR}/circos/gc/windowed_gc_content.txt",
-        expand(f"{FIGURES_DIR}/circos/{{feat}}/{{feat}}_count.txt", feat = ['repeat', 'gene']),
-        expand(f"{FIGURES_DIR}/circos/mapping/{{ref}}.bam", ref = ['utm','TrRv5'])
+        f"{FIGURES_DIR}/circos/circos.done"
 
 include: 'rules/minimap.smk'
 include: 'rules/blast.smk'

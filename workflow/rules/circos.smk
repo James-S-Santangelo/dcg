@@ -119,7 +119,7 @@ rule bwa_index_ref:
     output:
         multiext(f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/split/{ASSEMBLY_NAME}_chromsOnly.fasta", '.amb', '.ann', '.bwt', '.pac', '.sa')
     conda: '../envs/circos.yaml'
-    log: 'logs/bwa/bwa_index_ref.log'
+    log: f'{LOG_DIR}/bwa/bwa_index_ref.log'
     shell:
         """
         bwa index {input} 2> {log}
@@ -137,10 +137,57 @@ rule bwa_map_paired:
     output:
         f"{FIGURES_DIR}/circos/mapping/{{ref}}.bam" 
     conda: '../envs/circos.yaml'
-    log: 'logs/bwa/{ref}_bwa_mem.log'
+    log: f'{LOG_DIR}/bwa/{{ref}}_bwa_mem.log'
     threads: 12
     shell:
         """
         ( bwa mem -t {threads} {input.ref} {input.r1} {input.r2} {params} |\
             samtools view -hb -o {output} - ) 2> {log}
         """ 
+
+rule sort_and_index_bam:
+    input:
+        rules.bwa_map_paired.output
+    output:
+        bam = f"{FIGURES_DIR}/circos/mapping/{{ref}}_sorted.bam",
+        idx = f"{FIGURES_DIR}/circos/mapping/{{ref}}_sorted.bam.bai"
+    conda: '../envs/circos.yaml'
+    threads: 6
+    shell:
+        """
+        samtools sort -@ {threads} {input} > {output.bam}
+        samtools index {output.bam}
+        """
+
+rule bedtools_multicov:
+    input:
+        idx = rules.sort_and_index_bam.output.idx,
+        bed = rules.bedtools_makewindows.output.bed,
+        bam = rules.sort_and_index_bam.output.bam
+    output:
+        f"{FIGURES_DIR}/circos/mapping/{{ref}}_windowedCoverage.txt"
+    conda: '../envs/circos.yaml'
+    log: f'{LOG_DIR}/bedtools/{{ref}}_multicov.log'
+    shell:
+        """
+        bedtools multicov -bed {input.bed} -bams {input.bam} > {output} 2> {log}
+        """
+
+rule circos_done:
+    input:
+        f"{FIGURES_DIR}/circos/gc/windowed_gc_content.txt",
+        expand(rules.bedmap_featureCount.output, feat = ['repeat', 'gene']),
+        expand(rules.bedtools_multicov.output, ref = ['utm','TrRv5'])
+    output:
+        f"{FIGURES_DIR}/circos/circos.done"
+    shell:
+        """
+        touch {output}
+        """
+        
+
+
+
+
+
+
