@@ -9,19 +9,32 @@ rule index_fasta_chromsOnly:
         samtools faidx {input}
         """
 
-rule bedtools_makewindows:
+rule get_chrom_lengths:
     input:
-        fai = rules.index_fasta_chromsOnly.output
+        lambda w: rules.index_fasta_chromsOnly.output if w.ref == 'utm' else f"{TRR_FIVE_FASTA}.fai"
     output:
-        bed = f"{FIGURES_DIR}/circos/gc/gc_content_windows.bed",
-        chr_len = f"{PROGRAM_RESOURCE_DIR}/circos/chrom_lengths.txt"
+        f"{PROGRAM_RESOURCE_DIR}/circos/{{ref}}_chrom_lengths.txt"
     conda: '../envs/circos.yaml'
-    log: f"{LOG_DIR}/bedtools/makewindows.log"
     shell:
         """
-        cut -f1,2 {input.fai} > {output.chr_len}
+        if [ {wildcards.ref} = 'utm' ]; then
+            cut -f1,2 {input} > {output}
+        else
+            grep '^CM' {input} | cut -f1,2 > {output}
+        fi
+        """
+
+rule bedtools_makewindows:
+    input:
+        chr_len = rules.get_chrom_lengths.output
+    output:
+        bed = f"{FIGURES_DIR}/circos/{{ref}}_windows.bed",
+    conda: '../envs/circos.yaml'
+    log: f"{LOG_DIR}/bedtools/{{ref}}_makewindows.log"
+    shell:
+        """
         bedtools makewindows \
-            -g {output.chr_len} \
+            -g {input.chr_len} \
             -w 1000000  \
             -s 200000 \
             -i srcwinnum > {output.bed} 2> {log}
@@ -29,12 +42,12 @@ rule bedtools_makewindows:
 
 rule bedtools_nuc:
     input:
-        fasta = rules.split_fasta_toChroms_andOrganelles.output.chroms,
+        fasta = lambda w: rules.split_fasta_toChroms_andOrganelles.output.chroms if w.ref == 'utm' else TRR_FIVE_FASTA,
         bed = rules.bedtools_makewindows.output.bed
     output:
-        f"{FIGURES_DIR}/circos/gc/windowed_gc_content.txt"
+        f"{FIGURES_DIR}/circos/gc/{{ref}}_windowed_gc_content.txt"
     conda: '../envs/circos.yaml'
-    log: f"{LOG_DIR}/bedtools/nuc.log"
+    log: f"{LOG_DIR}/bedtools/{{ref}}_nuc.log"
     shell:
         """
         bedtools nuc -fi {input.fasta} -bed {input.bed} > {output} 2> {log}
@@ -42,7 +55,7 @@ rule bedtools_nuc:
 
 rule chromLengths_toBed:
     input:
-        bed = rules.bedtools_makewindows.output.chr_len
+        bed = rules.bedtools_makewindows.output
     output:
          f"{PROGRAM_RESOURCE_DIR}/circos/chrom_lengths.bed"
     conda: '../envs/circos.yaml'
@@ -175,7 +188,7 @@ rule bedtools_multicov:
 
 rule circos_done:
     input:
-        f"{FIGURES_DIR}/circos/gc/windowed_gc_content.txt",
+        expand(rules.bedtools_nuc.output, ref = ['utm','TrRv5']),
         expand(rules.bedmap_featureCount.output, feat = ['repeat', 'gene']),
         expand(rules.bedtools_multicov.output, ref = ['utm','TrRv5'])
     output:
