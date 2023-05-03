@@ -109,4 +109,38 @@ rule bedmap_featureCount:
             --delim '\t' \
             {input.win} {input.feat_bed} > {output} 2> {log}
         """
-        
+      
+rule bwa_index_ref:
+    """
+    Index reference with bwa to get ready for read mapping
+    """
+    input:
+        rules.split_fasta_toChroms_andOrganelles.output.chroms
+    output:
+        multiext(f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/split/{ASSEMBLY_NAME}_chromsOnly.fasta", '.amb', '.ann', '.bwt', '.pac', '.sa')
+    conda: '../envs/circos.yaml'
+    log: 'logs/bwa/bwa_index_ref.log'
+    shell:
+        """
+        bwa index {input} 2> {log}
+        """
+
+rule bwa_map_paired:
+    """
+    Map trimmed paired reads to the reference genome using bwa mem. Output as BAM
+    """
+    input:
+        r1 = READ1,
+        r2 = READ2,
+        ref = lambda w: rules.split_fasta_toChroms_andOrganelles.output.chroms if w.ref == 'utm' else TRR_FIVE_FASTA,
+        idx = rules.bwa_index_ref.output
+    output:
+        f"{FIGURES_DIR}/circos/mapping/{{ref}}.bam" 
+    conda: '../envs/circos.yaml'
+    log: 'logs/bwa/{ref}_bwa_mem.log'
+    threads: 12
+    shell:
+        """
+        ( bwa mem -t {threads} {input.ref} {input.r1} {input.r2} {params} |\
+            samtools view -hb -o {output} - ) 2> {log}
+        """ 

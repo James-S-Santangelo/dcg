@@ -5,3 +5,4 @@ dependencies:
   - samtools=1.16.1
   - bedtools=2.30.0
   - bedops=2.4.41
+  - bwa=0.7.17

@@ -29,6 +29,10 @@ NCBI_TEMPLATE = f"{RESOURCES}/ncbi_template.sbt"
 CHROMOSOMES = pd.read_table(f"{RESOURCES}/UTM_Trep_v1.0_chroms.txt", header=None).iloc[:,0].tolist()
 RNASEQ_ACCESSIONS = pd.read_csv(f"{RESOURCES}/Trepens_rnaseq_accessions_select.txt", sep = '\t')['accession'].tolist()
 
+# Reads to compare mapping againstnew and old reference genomes
+READ1 = f"{RESOURCES}/R1.fq.gz"
+READ2 = f"{RESOURCES}/R2.fq.gz"
+
 # Paths for output files
 LOG_DIR = config['log_prefix']
 BLAST_DIR = f"{config['results_prefix']}/blast"
@@ -57,7 +61,8 @@ rule all:
         f"{ANNOTATION_DIR}/annotation.done",
         f'{QC_DIR}/qc.done',
         f"{FIGURES_DIR}/circos/gc/windowed_gc_content.txt",
-        expand(f"{FIGURES_DIR}/circos/{{feat}}/{{feat}}_count.txt", feat=['repeat', 'gene'])
+        expand(f"{FIGURES_DIR}/circos/{{feat}}/{{feat}}_count.txt", feat = ['repeat', 'gene']),
+        expand(f"{FIGURES_DIR}/circos/mapping/{{ref}}.bam", ref = ['utm','TrRv5'])
 
 include: 'rules/minimap.smk'
 include: 'rules/blast.smk'
