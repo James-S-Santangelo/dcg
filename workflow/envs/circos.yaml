@@ -11,3 +11,4 @@ dependencies:
   - biopython=1.80
   - r-base=4.1.3
   - r-tidyverse=1.3.2
+  - seqtk=1.3
