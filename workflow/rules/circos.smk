@@ -263,7 +263,7 @@ rule minimap_utm_vs_TrRvFive:
     output:
         f"{FIGURES_DIR}/circos/minimap/utm_vs_TrRv5.paf"
     conda: '../envs/minimap.yaml'
-    log: LOG_DIR + '/minimap_utm_vs_TrRvFive/utm_vs_TrRv5.log'
+    log: LOG_DIR + '/minimap/utm_vs_TrRv5.log'
     threads: 8
     shell:
         """
@@ -277,11 +277,11 @@ rule cutN:
         ref = lambda w: rules.split_fasta_toChroms_andOrganelles.output.chroms if w.ref == 'utm' else rules.TrRvFive_chromsOnly.output.fasta, 
     output:
         f"{FIGURES_DIR}/circos/cutN/{{ref}}_Ns.bed"
-    conda: '../envs/minimap.yaml'
+    conda: '../envs/circos.yaml'
     log: f"{LOG_DIR}/cutN/{{ref}}_cutN.log"
     shell:
         """
-        sektq cutN -gp10000000 -n1 {input.ref} > {output} 2> {log}
+        seqtk cutN -gp10000000 -n1 {input.ref} > {output} 2> {log}
         """
 
 rule circos_done:
