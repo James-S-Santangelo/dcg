@@ -320,15 +320,107 @@ rule cutN:
         seqtk cutN -gp10000000 -n1 {input.ref} > {output} 2> {log}
         """
 
+###########################
+#### CIRCOS DATA SETUP ####
+###########################
+
+rule create_karyotype_file:
+    input:
+        rules.get_chrom_lengths.output
+    output:
+        f"{FIGURES_DIR}/circos/data/{{ref}}_karyotype.txt"
+    run:
+        if wildcards.ref == 'utm':
+            color = 'blue'
+        else:
+            color = 'orange'
+        with open(output[0], 'w') as fout:
+            with open(input[0], 'r') as fin:
+                lines = fin.readlines()
+                for line in lines:
+                    sline = line.strip().split('\t')
+                    fout.write(f"Chr\t-\t{sline[0]}\t{sline[0]}\t0\t{sline[1]}\t{color}\n")
+
+rule concat_Ns:
+    input:
+        expand(rules.cutN.output, ref=['utm','TrRv5'])
+    output:
+        f"{FIGURES_DIR}/circos/data/Ns.txt"
+    shell:
+        """
+        cat {input} > {output}
+        """
+
+rule concat_gc:
+    input:
+        expand(rules.bedtools_nuc.output, ref = ['utm','TrRv5'])
+    output:
+        f"{FIGURES_DIR}/circos/data/gc.txt"
+    shell:
+        """
+        cat {input} | cut -f1,2,3,6 | grep -v '^#' > {output}
+        """
+
+rule concat_geneDens:
+    input:
+        expand(rules.bedmap_featureCount.output, feat = 'transcripts', ref = ['utm','TrRv5'])
+    output:
+        f"{FIGURES_DIR}/circos/data/transcripts.txt"
+    shell:
+        """
+        cat {input} > {output}
+        """
+
+rule concat_repeatDens:
+    input:
+        expand(rules.bedmap_featureCount.output, feat = 'repeat', ref = ['utm','TrRv5'])
+    output:
+        f"{FIGURES_DIR}/circos/data/repeats.txt"
+    shell:
+        """
+        cat {input} > {output}
+        """
+
+rule standardize_coverage:
+    input:
+        rules.bedtools_multicov.output
+    output:
+        f"{FIGURES_DIR}/circos/mapping/{{ref}}_windowedCoverage_std.txt"
+    run:
+        df = pd.read_csv(input[0], sep = '\t', header = None)
+        df[4] = (df[4]-df[4].min())/(df[4].max()-df[4].min())
+        df = df.drop(3, axis = 1)
+        df.to_csv(output[0], sep = '\t', header=None, index = False)
+
+rule concat_coverage:
+    input:
+        expand(rules.standardize_coverage.output, ref = ['utm','TrRv5'])
+    output:
+        f"{FIGURES_DIR}/circos/data/coverage.txt"
+    shell:
+        """
+        cat {input} > {output}
+        """
+
+rule concat_mq:
+    input:
+        expand(rules.windowed_MQ.output, ref = ['utm','TrRv5'])
+    output:
+        f"{FIGURES_DIR}/circos/data/mq.txt"
+    shell:
+        """
+        cat {input} | cut -f1,2,3,5 > {output}
+        """
 
 rule circos_done:
     input:
-        expand(rules.bedtools_nuc.output, ref = ['utm','TrRv5']),
-        expand(rules.bedmap_featureCount.output, feat = ['repeat', 'transcripts'], ref = ['utm','TrRv5']),
-        expand(rules.bedtools_multicov.output, ref = ['utm','TrRv5']),
-        expand(rules.windowed_MQ.output, ref = ['utm','TrRv5']),
-        rules.minimap_utm_vs_TrRvFive.output,
-        expand(rules.cutN.output, ref = ['utm','TrRv5'])
+        expand(rules.create_karyotype_file.output, ref=['utm','TrRv5']),
+        rules.concat_Ns.output,
+        rules.concat_gc.output,
+        rules.concat_geneDens.output,
+        rules.concat_repeatDens.output,
+        rules.concat_coverage.output,
+        rules.concat_mq.output
     output:
         f"{FIGURES_DIR}/circos/circos.done"
     shell:
