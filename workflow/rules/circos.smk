@@ -241,7 +241,7 @@ rule bedtools_multicov:
 rule windowed_MQ:
     input:
         bed = rules.bedtools_makewindows.output,
-        bam = rules.sort_and_index_bam.output
+        bam = rules.sort_and_index_bam.output.bam
     output:
         f"{FIGURES_DIR}/circos/mapping/{{ref}}_windowedMQ.txt"
     conda: '../envs/circos.yaml'
