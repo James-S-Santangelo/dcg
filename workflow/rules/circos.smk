@@ -339,7 +339,7 @@ rule create_karyotype_file:
                 lines = fin.readlines()
                 for line in lines:
                     sline = line.strip().split('\t')
-                    fout.write(f"Chr\t-\t{sline[0]}\t{sline[0]}\t0\t{sline[1]}\t{color}\n")
+                    fout.write(f"chr\t-\t{sline[0]}\t{sline[0]}\t0\t{sline[1]}\t{color}\n")
 
 rule concat_Ns:
     input:
