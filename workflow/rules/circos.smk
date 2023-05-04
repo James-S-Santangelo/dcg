@@ -1,3 +1,8 @@
+
+###############
+#### SETUP ####
+###############
+
 rule TrRvFive_chromsOnly:
     input:
        TRR_FIVE_FASTA
@@ -52,6 +57,10 @@ rule bedtools_makewindows:
             -i srcwinnum > {output.bed} 2> {log}
         """
 
+####################
+#### GC CONTENT ####
+####################
+
 rule bedtools_nuc:
     input:
         fasta = lambda w: rules.split_fasta_toChroms_andOrganelles.output.chroms if w.ref == 'utm' else rules.TrRvFive_chromsOnly.output.fasta,
@@ -65,16 +74,9 @@ rule bedtools_nuc:
         bedtools nuc -fi {input.fasta} -bed {input.bed} > {output} 2> {log}
         """
 
-rule chromLengths_toBed:
-    input:
-        bed = rules.get_chrom_lengths.output
-    output:
-         f"{PROGRAM_RESOURCE_DIR}/circos/{{ref}}_chrom_lengths.bed"
-    conda: '../envs/circos.yaml'
-    shell:
-        """
-        awk -vOFS="\t" '{{ print $1, "0", $2; }}' {input.bed} | sort-bed - > {output}
-        """
+#################################
+#### GENE AND REPEAT DENSITY ####
+#################################
 
 rule gff_transcriptsOnly:
     input:
@@ -143,6 +145,17 @@ rule gffToBed:
         gff2bed < {input} > {output} 2> {log}
         """
 
+rule chromLengths_toBed:
+    input:
+        bed = rules.get_chrom_lengths.output
+    output:
+         f"{PROGRAM_RESOURCE_DIR}/circos/{{ref}}_chrom_lengths.bed"
+    conda: '../envs/circos.yaml'
+    shell:
+        """
+        awk -vOFS="\t" '{{ print $1, "0", $2; }}' {input.bed} | sort-bed - > {output}
+        """
+
 rule bedops:
     input:
         bed = rules.chromLengths_toBed.output
@@ -175,6 +188,10 @@ rule bedmap_featureCount:
             {input.win} {input.feat_bed} > {output} 2> {log}
         """
       
+######################################
+#### MAPPING COVERAGE AND QUALITY ####
+######################################
+
 rule bwa_index_ref:
     """
     Index reference with bwa to get ready for read mapping
@@ -253,6 +270,10 @@ rule windowed_MQ:
             -c 5 -o mean > {output} 2> {log}
         """
 
+############################
+#### MINIMAP ALIGNMENTS ####
+############################
+
 rule minimap_utm_vs_TrRvFive:
     """
     Maps the new assembly against the old Griffiths assembly to generate alignments for Circos 
@@ -272,6 +293,21 @@ rule minimap_utm_vs_TrRvFive:
             --cs | sort -k6,6 -k8,8 > {output} ) 2> {log}
         """
 
+rule filter_minimap:
+    input:
+        rules.minimap_utm_vs_TrRvFive.output
+    output:
+        f"{FIGURES_DIR}/circos/minimap/utm_vs_TrRv5_filtered.paf"
+    conda: '../envs/circos.yaml'
+    shell:
+        """
+        awk -vOFS="\t" '{$11>=10000 && $12=60}' {input} 2> {output}
+        """
+
+#########################
+#### STRETCHES OF Ns ####
+#########################
+
 rule cutN:
     input:
         ref = lambda w: rules.split_fasta_toChroms_andOrganelles.output.chroms if w.ref == 'utm' else rules.TrRvFive_chromsOnly.output.fasta, 
@@ -283,6 +319,7 @@ rule cutN:
         """
         seqtk cutN -gp10000000 -n1 {input.ref} > {output} 2> {log}
         """
+
 
 rule circos_done:
     input:
