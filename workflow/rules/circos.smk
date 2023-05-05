@@ -57,6 +57,58 @@ rule bedtools_makewindows:
             -i srcwinnum > {output.bed} 2> {log}
         """
 
+rule makeblastdb_fromRef:
+    """
+    Creates BLAST Database from UTM reference or Griffiths reference (chromosomes only).
+    """
+    input:
+        lambda w: rules.index_fasta_chromsOnly.output if w.ref == 'utm' else rules.TrRvFive_chromsOnly.output.fai
+    output:
+        multiext(f'{BLAST_DIR}/blastDBs/{{ref}}/{{ref}}.fasta', '.ndb', '.nhr', '.nin', '.nog', '.nos', '.not', '.nsq', '.ntf', '.nto') 
+    conda: '../envs/blast.yaml'
+    log: LOG_DIR + '/makeblastdb/makeblastdb_{ref}.log'
+    params:
+        outfile = f'{BLAST_DIR}/blastDBs/{{ref}}/{{ref}}.fasta'
+    shell:
+        """
+        makeblastdb -in {input} \
+            -dbtype nucl \
+            -parse_seqids \
+            -logfile {log} \
+            -out {params.outfile}
+        """
+
+############################
+#### LINKAGE MAP CIRCOS ####
+############################
+
+rule blast_linkageMarkers:
+    """
+    BLASTs linkage markers from Olsen et al. (2022) F2 mapping populations against UTM or Griggiths references. Used to generate Circos plot with markers connected to both reference 
+    """
+    input:
+        markers = ancient(f'{GENMAP_RESOURCE_DIR}/{{map_pop}}_tags.fa'),
+        db = rules.makeblastdb_fromRef.output 
+    output:
+        f'{BLAST_DIR}/genMap/{{ref}}_{{map_pop}}_marker_blast.txt'
+    conda: '../envs/blast.yaml'
+    log: LOG_DIR + '/blast_markers/{ref}_{map_pop}_marker_blast.log'
+    params:
+        outfmt = "'6 qseqid sseqid pident length mismatch gapopen qstart qend qlen sstart send slen evalue bitscore qcovs qcovhsp'",
+        db_base = lambda wildcards, input: os.path.splitext(input.db[0])[0]
+    threads: 4
+    shell:
+        """
+        blastn -db {params.db_base} \
+            -query {input.markers} \
+            -out {output} \
+            -outfmt {params.outfmt} \
+            -num_threads {threads} \
+            -evalue 1e-10 \
+            -max_hsps 5 \
+            -max_target_seqs 5 2> {log}  
+        """
+
 ####################
 #### GC CONTENT ####
 ####################
