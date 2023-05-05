@@ -52,8 +52,8 @@ rule bedtools_makewindows:
         """
         bedtools makewindows \
             -g {input.chr_len} \
-            -w 1000000  \
-            -s 200000 \
+            -w 100000  \
+            -s 20000 \
             -i srcwinnum > {output.bed} 2> {log}
         """
 
@@ -166,8 +166,8 @@ rule bedops:
     shell:
         """
         bedops \
-            --chop 1000000 \
-            --stagger 200000 \
+            --chop 100000 \
+            --stagger 20000 \
             -x {input.bed} > {output} 2> {log}
         """
 
@@ -298,26 +298,9 @@ rule filter_minimap:
         rules.minimap_utm_vs_TrRvFive.output
     output:
         f"{FIGURES_DIR}/circos/minimap/utm_vs_TrRv5_filtered.paf"
-    conda: '../envs/circos.yaml'
     shell:
         """
-        awk -vOFS="\t" '{$11>=10000 && $12=60}' {input} 2> {output}
-        """
-
-#########################
-#### STRETCHES OF Ns ####
-#########################
-
-rule cutN:
-    input:
-        ref = lambda w: rules.split_fasta_toChroms_andOrganelles.output.chroms if w.ref == 'utm' else rules.TrRvFive_chromsOnly.output.fasta, 
-    output:
-        f"{FIGURES_DIR}/circos/cutN/{{ref}}_Ns.bed"
-    conda: '../envs/circos.yaml'
-    log: f"{LOG_DIR}/cutN/{{ref}}_cutN.log"
-    shell:
-        """
-        seqtk cutN -gp10000000 -n1 {input.ref} > {output} 2> {log}
+        awk -vOFS="\t" '$11>=50000 && $12=60' {input} > {output}
         """
 
 ###########################
@@ -336,14 +319,28 @@ rule create_karyotype_file:
             color = 'orange'
         with open(output[0], 'w') as fout:
             with open(input[0], 'r') as fin:
-                lines = fin.readlines()
+                if wildcards.ref == 'utm':
+                    lines = fin.readlines()
+                else:
+                    lines = reversed(fin.readlines())
                 for line in lines:
                     sline = line.strip().split('\t')
                     fout.write(f"chr\t-\t{sline[0]}\t{sline[0]}\t0\t{sline[1]}\t{color}\n")
 
+rule prop_N:
+    input:
+        rules.bedtools_nuc.output
+    output:
+        f"{FIGURES_DIR}/circos/Ns/{{ref}}_propN.txt"
+    run:
+        df = pd.read_csv(input[0], sep = '\t', skiprows = 1, header = None)
+        df_mod = df.iloc[:, [0,1,2,10,12]]
+        df_mod.iloc[:, 3] = df_mod.iloc[:, 3] / df_mod.iloc[:, 4]
+        df_mod.iloc[:, [0,1,2,3]].to_csv(output[0], sep = '\t', header=None, index = False)
+
 rule concat_Ns:
     input:
-        expand(rules.cutN.output, ref=['utm','TrRv5'])
+        expand(rules.prop_N.output, ref = ['utm','TrRv5'])
     output:
         f"{FIGURES_DIR}/circos/data/Ns.txt"
     shell:
@@ -412,6 +409,16 @@ rule concat_mq:
         cat {input} | cut -f1,2,3,5 > {output}
         """
 
+rule create_links:
+    input:
+        rules.filter_minimap.output
+    output:
+        f"{FIGURES_DIR}/circos/data/links.txt"
+    run:
+        df = pd.read_csv(input[0], sep = '\t', header = None)
+        df_mod = df.iloc[:, [0,2,3,5,7,8]]
+        df_mod.to_csv(output[0], sep = '\t', header=None, index = False)
+
 rule circos_done:
     input:
         expand(rules.create_karyotype_file.output, ref=['utm','TrRv5']),
@@ -420,7 +427,8 @@ rule circos_done:
         rules.concat_geneDens.output,
         rules.concat_repeatDens.output,
         rules.concat_coverage.output,
-        rules.concat_mq.output
+        rules.concat_mq.output,
+        rules.create_links.output
     output:
         f"{FIGURES_DIR}/circos/circos.done"
     shell:
