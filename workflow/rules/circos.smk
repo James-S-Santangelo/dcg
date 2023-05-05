@@ -109,32 +109,52 @@ rule blast_linkageMarkers:
             -max_target_seqs 5 2> {log}  
         """
 
-####################
+# rule create_karyotype_file_linkageMap:
+#     input:
+#         rules.get_chrom_lengths.output
+#     output:
+#         f"{FIGURES_DIR}/circos/data/utm_karyotype.txt"
+#     run:
+#         if wildcards.ref == 'utm':
+#             color = 'blue'
+#         else:
+#             color = 'orange'
+#         with open(output[0], 'w') as fout:
+#             with open(input[0], 'r') as fin:
+#                 if wildcards.ref == 'utm':
+#                     lines = fin.readlines()
+#                 else:
+#                     lines = reversed(fin.readlines())
+#                 for line in lines:
+#                     sline = line.strip().split('\t')
+#                     fout.write(f"chr\t-\t{sline[0]}\t{sline[0]}\t0\t{sline[1]}\t{color}\n")
+
+##############################
+#### UTM_TREP_v1.0 CIRCOS #### 
+##############################
+
 #### GC CONTENT ####
-####################
 
 rule bedtools_nuc:
     input:
-        fasta = lambda w: rules.split_fasta_toChroms_andOrganelles.output.chroms if w.ref == 'utm' else rules.TrRvFive_chromsOnly.output.fasta,
+        fasta = rules.split_fasta_toChroms_andOrganelles.output.chroms 
         bed = rules.bedtools_makewindows.output.bed
     output:
-        f"{FIGURES_DIR}/circos/gc/{{ref}}_windowed_gc_content.txt"
+        f"{FIGURES_DIR}/circos/gc/utm_windowed_gc_content.txt"
     conda: '../envs/circos.yaml'
-    log: f"{LOG_DIR}/bedtools/{{ref}}_nuc.log"
+    log: f"{LOG_DIR}/bedtools/utm_nuc.log"
     shell:
         """
         bedtools nuc -fi {input.fasta} -bed {input.bed} > {output} 2> {log}
         """
 
-#################################
 #### GENE AND REPEAT DENSITY ####
-#################################
 
-rule gff_transcriptsOnly:
+rule gff_genesOnly:
     input:
-        lambda w: rules.gff_sort_functional.output if w.ref == 'utm' else TRR_FIVE_GTF
+        rules.gff_sort_functional.output 
     output:
-        f"{PROGRAM_RESOURCE_DIR}/circos/{{ref}}_transcripts.gff"
+        f"{PROGRAM_RESOURCE_DIR}/circos/utm_genes.gff"
     run:
         with open(output[0], 'w') as fout:
             with open(input[0], 'r') as fin:
@@ -142,56 +162,16 @@ rule gff_transcriptsOnly:
                 for line in lines:
                     if not line.startswith('#'):
                         sline = line.split('\t')
-                        if wildcards.ref == 'utm':
-                            if sline[2] == 'mRNA':
-                                fout.write(f"{line}")
-                        elif wildcards.ref == 'TrRv5':
-                            if sline[2] == 'transcript':
-                                fout.write(f"{line}")
-
-rule TrRvFive_repeatMask:
-    """
-    Softmask repeats in the white clover haploid mapping reference assembly.
-    """
-    input:
-        lib = rules.merge_repeat_databases.output,
-        fasta = rules.TrRvFive_chromsOnly.output.fasta
-    output:
-        fasta = f"{PROGRAM_RESOURCE_DIR}/TrR5_repeat_mask/TrRv5_softMasked.fasta",
-        cat = f"{PROGRAM_RESOURCE_DIR}/TrR5_repeat_mask/TrRv5_repeatMasker.cat.gz",
-        out = f"{PROGRAM_RESOURCE_DIR}/TrR5_repeat_mask/TrRv5_repeatMasker.out",
-        gff = f"{PROGRAM_RESOURCE_DIR}/TrR5_repeat_mask/TrRv5_repeatMasker.gff",
-        stats = f"{PROGRAM_RESOURCE_DIR}/TrR5_repeat_mask/TrRv5_repeatMasker.tbl"
-    threads: 36
-    container: 'docker://dfam/tetools:1.6'
-    log: LOG_DIR + '/TrRvFive_repeat/TrRvFive_repeat.log'
-    params:
-        outdir = f"{PROGRAM_RESOURCE_DIR}/TrR5_repeat_mask" 
-    shell:
-        """
-        ( RepeatMasker -e ncbi \
-            -pa {threads} \
-            -nolow \
-            -xsmall \
-            -gc 33 \
-            -lib {input.lib} \
-            -dir {params.outdir} \
-            -gff {input.fasta} &&
-            
-            mv {params.outdir}/*.fasta.masked {output.fasta}
-            mv {params.outdir}/*.cat.gz {output.cat}
-            mv {params.outdir}/*.out {output.out}
-            mv {params.outdir}/*.gff {output.gff}
-            mv {params.outdir}/*.tbl {output.stats} ) &> {log}
-        """
+                        if sline[2] == 'gene':
+                            fout.write(f"{line}")
 
 rule gffToBed:
     input:
         get_gffToBed_input 
     output:
-        f"{PROGRAM_RESOURCE_DIR}/circos/{{ref}}_{{feat}}.bed"
+        f"{PROGRAM_RESOURCE_DIR}/circos/utm_{{feat}}.bed"
     conda: '../envs/circos.yaml'
-    log: f"{LOG_DIR}/bedops/{{ref}}_{{feat}}_toBed.log"
+    log: f"{LOG_DIR}/bedops/utm_{{feat}}_toBed.log"
     shell:
         """
         gff2bed < {input} > {output} 2> {log}
@@ -201,7 +181,7 @@ rule chromLengths_toBed:
     input:
         bed = rules.get_chrom_lengths.output
     output:
-         f"{PROGRAM_RESOURCE_DIR}/circos/{{ref}}_chrom_lengths.bed"
+         f"{PROGRAM_RESOURCE_DIR}/circos/utm_chrom_lengths.bed"
     conda: '../envs/circos.yaml'
     shell:
         """
@@ -212,9 +192,9 @@ rule bedops:
     input:
         bed = rules.chromLengths_toBed.output
     output:
-        f"{PROGRAM_RESOURCE_DIR}/circos/{{ref}}_bedops_windows.bed"
+        f"{PROGRAM_RESOURCE_DIR}/circos/utm_bedops_windows.bed"
     conda: '../envs/circos.yaml'
-    log: f"{LOG_DIR}/bedops/{{ref}}_bedops.log"
+    log: f"{LOG_DIR}/bedops/utm_bedops.log"
     shell:
         """
         bedops \
@@ -228,9 +208,9 @@ rule bedmap_featureCount:
         win = rules.bedops.output,
         feat_bed = rules.gffToBed.output
     output:
-        f"{FIGURES_DIR}/circos/{{feat}}/{{ref}}_{{feat}}_count.txt"
+        f"{FIGURES_DIR}/circos/{{feat}}/utm_{{feat}}_count.txt"
     conda: '../envs/circos.yaml'
-    log: f"{LOG_DIR}/feature_count/{{ref}}_{{feat}}_count.log"
+    log: f"{LOG_DIR}/feature_count/utm_{{feat}}_count.log"
     shell:
         """
         bedmap \
@@ -240,247 +220,9 @@ rule bedmap_featureCount:
             {input.win} {input.feat_bed} > {output} 2> {log}
         """
       
-######################################
-#### MAPPING COVERAGE AND QUALITY ####
-######################################
-
-rule bwa_index_ref:
-    """
-    Index reference with bwa to get ready for read mapping
-    """
-    input:
-        rules.split_fasta_toChroms_andOrganelles.output.chroms
-    output:
-        multiext(f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/split/{ASSEMBLY_NAME}_chromsOnly.fasta", '.amb', '.ann', '.bwt', '.pac', '.sa')
-    conda: '../envs/circos.yaml'
-    log: f'{LOG_DIR}/bwa/bwa_index_ref.log'
-    shell:
-        """
-        bwa index {input} 2> {log}
-        """
-
-rule bwa_map_paired:
-    """
-    Map trimmed paired reads to the reference genome using bwa mem. Output as BAM
-    """
-    input:
-        r1 = READ1,
-        r2 = READ2,
-        ref = lambda w: rules.split_fasta_toChroms_andOrganelles.output.chroms if w.ref == 'utm' else rules.TrRvFive_chromsOnly.output.fasta, 
-        idx = rules.bwa_index_ref.output
-    output:
-        f"{FIGURES_DIR}/circos/mapping/{{ref}}.bam" 
-    conda: '../envs/circos.yaml'
-    log: f'{LOG_DIR}/bwa/{{ref}}_bwa_mem.log'
-    threads: 12
-    shell:
-        """
-        ( bwa mem -t {threads} {input.ref} {input.r1} {input.r2} {params} |\
-            samtools view -hb -o {output} - ) 2> {log}
-        """ 
-
-rule sort_and_index_bam:
-    input:
-        rules.bwa_map_paired.output
-    output:
-        bam = f"{FIGURES_DIR}/circos/mapping/{{ref}}_sorted.bam",
-        idx = f"{FIGURES_DIR}/circos/mapping/{{ref}}_sorted.bam.bai"
-    conda: '../envs/circos.yaml'
-    threads: 6
-    shell:
-        """
-        samtools sort -@ {threads} {input} > {output.bam}
-        samtools index {output.bam}
-        """
-
-rule bedtools_multicov:
-    input:
-        idx = rules.sort_and_index_bam.output.idx,
-        bed = rules.bedtools_makewindows.output.bed,
-        bam = rules.sort_and_index_bam.output.bam
-    output:
-        f"{FIGURES_DIR}/circos/mapping/{{ref}}_windowedCoverage.txt"
-    conda: '../envs/circos.yaml'
-    log: f'{LOG_DIR}/bedtools/{{ref}}_multicov.log'
-    shell:
-        """
-        bedtools multicov -bed {input.bed} -bams {input.bam} > {output} 2> {log}
-        """
-
-rule windowed_MQ:
-    input:
-        bed = rules.bedtools_makewindows.output,
-        bam = rules.sort_and_index_bam.output.bam
-    output:
-        f"{FIGURES_DIR}/circos/mapping/{{ref}}_windowedMQ.txt"
-    conda: '../envs/circos.yaml'
-    log: f'{LOG_DIR}/bedtools/{{ref}}_windowedMQ.log'
-    shell:
-        """
-        bedtools map -a {input.bed} \
-            -b <(bedtools bamtobed -i {input.bam}) \
-            -c 5 -o mean > {output} 2> {log}
-        """
-
-############################
-#### MINIMAP ALIGNMENTS ####
-############################
-
-rule minimap_utm_vs_TrRvFive:
-    """
-    Maps the new assembly against the old Griffiths assembly to generate alignments for Circos 
-    """
-    input:
-        utm = rules.split_fasta_toChroms_andOrganelles.output.chroms,
-        TrRvFive = rules.TrRvFive_chromsOnly.output.fasta
-    output:
-        f"{FIGURES_DIR}/circos/minimap/utm_vs_TrRv5.paf"
-    conda: '../envs/minimap.yaml'
-    log: LOG_DIR + '/minimap/utm_vs_TrRv5.log'
-    threads: 8
-    shell:
-        """
-        ( minimap2 -cx asm5 {input.TrRvFive} {input.utm} \
-            -t {threads} \
-            --cs | sort -k6,6 -k8,8 > {output} ) 2> {log}
-        """
-
-rule filter_minimap:
-    input:
-        rules.minimap_utm_vs_TrRvFive.output
-    output:
-        f"{FIGURES_DIR}/circos/minimap/utm_vs_TrRv5_filtered.paf"
-    shell:
-        """
-        awk -vOFS="\t" '$11>=50000 && $12=60' {input} > {output}
-        """
-
-###########################
-#### CIRCOS DATA SETUP ####
-###########################
-
-rule create_karyotype_file:
-    input:
-        rules.get_chrom_lengths.output
-    output:
-        f"{FIGURES_DIR}/circos/data/{{ref}}_karyotype.txt"
-    run:
-        if wildcards.ref == 'utm':
-            color = 'blue'
-        else:
-            color = 'orange'
-        with open(output[0], 'w') as fout:
-            with open(input[0], 'r') as fin:
-                if wildcards.ref == 'utm':
-                    lines = fin.readlines()
-                else:
-                    lines = reversed(fin.readlines())
-                for line in lines:
-                    sline = line.strip().split('\t')
-                    fout.write(f"chr\t-\t{sline[0]}\t{sline[0]}\t0\t{sline[1]}\t{color}\n")
-
-rule prop_N:
-    input:
-        rules.bedtools_nuc.output
-    output:
-        f"{FIGURES_DIR}/circos/Ns/{{ref}}_propN.txt"
-    run:
-        df = pd.read_csv(input[0], sep = '\t', skiprows = 1, header = None)
-        df_mod = df.iloc[:, [0,1,2,10,12]]
-        df_mod.iloc[:, 3] = df_mod.iloc[:, 3] / df_mod.iloc[:, 4]
-        df_mod.iloc[:, [0,1,2,3]].to_csv(output[0], sep = '\t', header=None, index = False)
-
-rule concat_Ns:
-    input:
-        expand(rules.prop_N.output, ref = ['utm','TrRv5'])
-    output:
-        f"{FIGURES_DIR}/circos/data/Ns.txt"
-    shell:
-        """
-        cat {input} > {output}
-        """
-
-rule concat_gc:
-    input:
-        expand(rules.bedtools_nuc.output, ref = ['utm','TrRv5'])
-    output:
-        f"{FIGURES_DIR}/circos/data/gc.txt"
-    shell:
-        """
-        cat {input} | cut -f1,2,3,6 | grep -v '^#' > {output}
-        """
-
-rule concat_geneDens:
-    input:
-        expand(rules.bedmap_featureCount.output, feat = 'transcripts', ref = ['utm','TrRv5'])
-    output:
-        f"{FIGURES_DIR}/circos/data/transcripts.txt"
-    shell:
-        """
-        cat {input} > {output}
-        """
-
-rule concat_repeatDens:
-    input:
-        expand(rules.bedmap_featureCount.output, feat = 'repeat', ref = ['utm','TrRv5'])
-    output:
-        f"{FIGURES_DIR}/circos/data/repeats.txt"
-    shell:
-        """
-        cat {input} > {output}
-        """
-
-rule standardize_coverage:
-    input:
-        rules.bedtools_multicov.output
-    output:
-        f"{FIGURES_DIR}/circos/mapping/{{ref}}_windowedCoverage_std.txt"
-    run:
-        df = pd.read_csv(input[0], sep = '\t', header = None)
-        df[4] = (df[4]-df[4].min())/(df[4].max()-df[4].min())
-        df = df.drop(3, axis = 1)
-        df.to_csv(output[0], sep = '\t', header=None, index = False)
-
-rule concat_coverage:
-    input:
-        expand(rules.standardize_coverage.output, ref = ['utm','TrRv5'])
-    output:
-        f"{FIGURES_DIR}/circos/data/coverage.txt"
-    shell:
-        """
-        cat {input} > {output}
-        """
-
-rule concat_mq:
-    input:
-        expand(rules.windowed_MQ.output, ref = ['utm','TrRv5'])
-    output:
-        f"{FIGURES_DIR}/circos/data/mq.txt"
-    shell:
-        """
-        cat {input} | cut -f1,2,3,5 > {output}
-        """
-
-rule create_links:
-    input:
-        rules.filter_minimap.output
-    output:
-        f"{FIGURES_DIR}/circos/data/links.txt"
-    run:
-        df = pd.read_csv(input[0], sep = '\t', header = None)
-        df_mod = df.iloc[:, [0,2,3,5,7,8]]
-        df_mod.to_csv(output[0], sep = '\t', header=None, index = False)
-
 rule circos_done:
     input:
-        expand(rules.create_karyotype_file.output, ref=['utm','TrRv5']),
-        rules.concat_Ns.output,
-        rules.concat_gc.output,
-        rules.concat_geneDens.output,
-        rules.concat_repeatDens.output,
-        rules.concat_coverage.output,
-        rules.concat_mq.output,
-        rules.create_links.output
+        
     output:
         f"{FIGURES_DIR}/circos/circos.done"
     shell:
