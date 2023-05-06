@@ -62,7 +62,7 @@ rule makeblastdb_fromRef:
     Creates BLAST Database from UTM reference or Griffiths reference (chromosomes only).
     """
     input:
-        lambda w: rules.index_fasta_chromsOnly.output if w.ref == 'utm' else rules.TrRvFive_chromsOnly.output.fai
+        lambda w: rules.split_fasta_toChroms_andOrganelles.output.chroms if w.ref == 'utm' else rules.TrRvFive_chromsOnly.output.fasta
     output:
         multiext(f'{BLAST_DIR}/blastDBs/{{ref}}/{{ref}}.fasta', '.ndb', '.nhr', '.nin', '.nog', '.nos', '.not', '.nsq', '.ntf', '.nto') 
     conda: '../envs/blast.yaml'
@@ -82,7 +82,7 @@ rule makeblastdb_fromRef:
 #### LINKAGE MAP CIRCOS ####
 ############################
 
-rule blast_linkageMarkers:
+rule blast_linkageMarkers_toRef:
     """
     BLASTs linkage markers from Olsen et al. (2022) F2 mapping populations against UTM or Griggiths references. Used to generate Circos plot with markers connected to both reference 
     """
@@ -137,7 +137,7 @@ rule blast_linkageMarkers:
 
 rule bedtools_nuc:
     input:
-        fasta = rules.split_fasta_toChroms_andOrganelles.output.chroms 
+        fasta = rules.split_fasta_toChroms_andOrganelles.output.chroms,
         bed = rules.bedtools_makewindows.output.bed
     output:
         f"{FIGURES_DIR}/circos/gc/utm_windowed_gc_content.txt"
@@ -222,7 +222,7 @@ rule bedmap_featureCount:
       
 rule circos_done:
     input:
-        
+       expand(rules.blast_linkageMarkers_toRef.output, ref = ['utm', 'TrRv5'], map_pop = ['SG', 'DG']) 
     output:
         f"{FIGURES_DIR}/circos/circos.done"
     shell:

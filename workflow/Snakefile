@@ -50,7 +50,9 @@ HAP_VS_HAP = [f'{i}-{j}' for i in HAPS for j in HAPS if i != j]
 ASSEMBLY_NAME = 'UTM_Trep_v1.0'
 
 wildcard_constraints:
-    acc = '|'.join(RNASEQ_ACCESSIONS)
+    acc = '|'.join(RNASEQ_ACCESSIONS),
+    hap = '|'.join(HAPS),
+    ref = '|'.join(['utm', 'TrRv5'])
 
 include: 'rules/common.smk'
 
