@@ -79,14 +79,9 @@ def fix_product(feature):
         new_product = 'Putative SNAP25 homologous protein SNAP30'
     elif gene_parent == 'ACLI19_g47730':
         new_product = 'alpha-1 tubulin'
-        if product != new_product:
-            print(f"{feat.id}: {product} changed to {new_product}")
     else:
         new_product = product
 
-    if product != new_product:
-        print(f"{feat.id}: {product} changed to {new_product}")
-    
     # Update product if present, create if not
     if 'product' in feature.attributes.keys():
         feat.attributes['product'][0] = new_product

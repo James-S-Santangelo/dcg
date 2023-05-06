@@ -669,7 +669,7 @@ rule fixEC_incrementCDS_addLocusTags:
         gff = rules.funannotate_annotate.output.gff3,
         ec = rules.download_ec_numbers.output
     output:
-        f"{ANNOTATION_DIR}/{ASSEMBLY_NAME}_functional_ECfix_wLocusTags.gff"
+        f"{ANNOTATION_DIR}/cleaned/{ASSEMBLY_NAME}_functional_ECfix_wLocusTags.gff"
     conda: '../envs/gffutils.yaml'
     params:
         locus_tag = 'P8452'
@@ -683,18 +683,31 @@ rule fixProducts_ncbiErrors:
     input:
         gff = rules.fixEC_incrementCDS_addLocusTags.output
     output:
-        db = f"{PROGRAM_RESOURCE_DIR}/gffutils/{ASSEMBLY_NAME}.gffdb",
-        gff = f"{ANNOTATION_DIR}/{ASSEMBLY_NAME}_functional_final.gff3"
+        db = f"{PROGRAM_RESOURCE_DIR}/gffutils/{ASSEMBLY_NAME}_fixProducts.gffdb",
+        gff = f"{ANNOTATION_DIR}/cleaned/{ASSEMBLY_NAME}_functional_productFix.gff3"
     conda: '../envs/gffutils.yaml'
     script:
         "../scripts/python/fixProducts_ncbiErrors.py"
+
+rule fix_overlappingGenes_remapIDs:
+    """
+    Remove overlapping genes where one gene is nested within the other and CDSs overlap
+    """
+    input:
+        gff = rules.fixProducts_ncbiErrors.output.gff
+    output:
+        db = f"{PROGRAM_RESOURCE_DIR}/gffutils/{ASSEMBLY_NAME}_fixOverlaps.gffdb", 
+        gff = f"{ANNOTATION_DIR}/cleaned/{ASSEMBLY_NAME}_functional_final.gff3"
+    conda: '../envs/gffutils.yaml'
+    script:
+         "../scripts/python/fixOverlaps_remapIDs.py"
 
 rule gff_sort_functional:
     """
     Sort GFF3 with functional annotations using GFF3_sort Perl script. Can't use genometools here since sorting not compatible with table2asn
     """
     input:
-        rules.fixProducts_ncbiErrors.output.gff
+        rules.fix_overlappingGenes_remapIDs.output.gff
     output:
         f"{ANNOTATION_DIR}/{ASSEMBLY_NAME}_functional_final_sorted.gff3"
     log: LOG_DIR + '/gff_sort/gff_sort_functional.log'
