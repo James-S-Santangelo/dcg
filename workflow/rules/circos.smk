@@ -109,25 +109,40 @@ rule blast_linkageMarkers_toRef:
             -max_target_seqs 5 2> {log}  
         """
 
-# rule create_karyotype_file_linkageMap:
-#     input:
-#         rules.get_chrom_lengths.output
-#     output:
-#         f"{FIGURES_DIR}/circos/data/utm_karyotype.txt"
-#     run:
-#         if wildcards.ref == 'utm':
-#             color = 'blue'
-#         else:
-#             color = 'orange'
-#         with open(output[0], 'w') as fout:
-#             with open(input[0], 'r') as fin:
-#                 if wildcards.ref == 'utm':
-#                     lines = fin.readlines()
-#                 else:
-#                     lines = reversed(fin.readlines())
-#                 for line in lines:
-#                     sline = line.strip().split('\t')
-#                     fout.write(f"chr\t-\t{sline[0]}\t{sline[0]}\t0\t{sline[1]}\t{color}\n")
+rule generate_circos_genMap_links:
+    input:
+        expand(rules.blast_linkageMarkers_toRef.output, map_pop=['SG', 'DG'], ref=['utm', 'TrRv5']),
+        f"{GENMAP_RESOURCE_DIR}/DG_marker_key.csv",
+        f"{GENMAP_RESOURCE_DIR}/SG_marker_key.csv",
+        f"{GENMAP_RESOURCE_DIR}/DG_genMap.csv",
+        f"{GENMAP_RESOURCE_DIR}/SG_genMap.csv"
+    output:
+        f"{FIGURES_DIR}/circos/refs_vs_genMap/data/genMap_karyotype.txt",
+        expand(f"{FIGURES_DIR}/circos/refs_vs_genMap/data/{{match}}_genMap_links.txt", match = ['match', 'nomatch']),
+        f"{FIGURES_DIR}/circos/refs_vs_genMap/data/genMap_markerPositions.txt"
+    conda: '../envs/circos.yaml'
+    script:
+        "../scripts/r/generate_circos_genMap_links.R"
+
+rule create_karyotype_file_ref:
+    input:
+        rules.get_chrom_lengths.output
+    output:
+        f"{FIGURES_DIR}/circos/{{ref}}_karyotype.txt"
+    run:
+        if wildcards.ref == 'utm':
+            color = "mygreen"
+        else:
+            color = "myblue"
+        with open(output[0], 'w') as fout:
+            with open(input[0], 'r') as fin:
+                if wildcards.ref == 'utm':
+                    lines = fin.readlines()
+                else:
+                    lines = reversed(fin.readlines())
+                for line in lines:
+                    sline = line.strip().split('\t')
+                    fout.write(f"chr\t-\t{sline[0]}\t{sline[0]}\t0\t{sline[1]}\t{color}\n")
 
 ##############################
 #### UTM_TREP_v1.0 CIRCOS #### 
@@ -138,14 +153,15 @@ rule blast_linkageMarkers_toRef:
 rule bedtools_nuc:
     input:
         fasta = rules.split_fasta_toChroms_andOrganelles.output.chroms,
-        bed = rules.bedtools_makewindows.output.bed
+        bed = expand(rules.bedtools_makewindows.output.bed, ref = 'utm')
     output:
-        f"{FIGURES_DIR}/circos/gc/utm_windowed_gc_content.txt"
+        f"{FIGURES_DIR}/circos/utm/data/utm_windowed_gc_content.txt"
     conda: '../envs/circos.yaml'
     log: f"{LOG_DIR}/bedtools/utm_nuc.log"
     shell:
         """
-        bedtools nuc -fi {input.fasta} -bed {input.bed} > {output} 2> {log}
+        bedtools nuc -fi {input.fasta} -bed {input.bed} |\
+            tail -n +1 | cut -f1,2,3,6 > {output} 2> {log}
         """
 
 #### GENE AND REPEAT DENSITY ####
@@ -154,7 +170,7 @@ rule gff_genesOnly:
     input:
         rules.gff_sort_functional.output 
     output:
-        f"{PROGRAM_RESOURCE_DIR}/circos/utm_genes.gff"
+        f"{PROGRAM_RESOURCE_DIR}/circos/utm/utm_genes.gff"
     run:
         with open(output[0], 'w') as fout:
             with open(input[0], 'r') as fin:
@@ -167,9 +183,9 @@ rule gff_genesOnly:
 
 rule gffToBed:
     input:
-        get_gffToBed_input 
+        lambda w: rules.repeat_masker.output.gff if w.feat == 'repeat' else rules.gff_genesOnly.output  
     output:
-        f"{PROGRAM_RESOURCE_DIR}/circos/utm_{{feat}}.bed"
+        f"{PROGRAM_RESOURCE_DIR}/circos/utm/utm_{{feat}}.bed"
     conda: '../envs/circos.yaml'
     log: f"{LOG_DIR}/bedops/utm_{{feat}}_toBed.log"
     shell:
@@ -179,7 +195,7 @@ rule gffToBed:
 
 rule chromLengths_toBed:
     input:
-        bed = rules.get_chrom_lengths.output
+        bed = expand(rules.get_chrom_lengths.output, ref = 'utm')
     output:
          f"{PROGRAM_RESOURCE_DIR}/circos/utm_chrom_lengths.bed"
     conda: '../envs/circos.yaml'
@@ -208,7 +224,7 @@ rule bedmap_featureCount:
         win = rules.bedops.output,
         feat_bed = rules.gffToBed.output
     output:
-        f"{FIGURES_DIR}/circos/{{feat}}/utm_{{feat}}_count.txt"
+        f"{FIGURES_DIR}/circos/utm/data/utm_{{feat}}_count.txt"
     conda: '../envs/circos.yaml'
     log: f"{LOG_DIR}/feature_count/utm_{{feat}}_count.log"
     shell:
@@ -222,7 +238,10 @@ rule bedmap_featureCount:
       
 rule circos_done:
     input:
-       expand(rules.blast_linkageMarkers_toRef.output, ref = ['utm', 'TrRv5'], map_pop = ['SG', 'DG']) 
+        rules.generate_circos_genMap_links.output,
+        expand(rules.create_karyotype_file_ref.output, ref = ['utm', 'TrRv5']),
+        rules.bedtools_nuc.output,
+        expand(rules.bedmap_featureCount.output, feat=['repeat', 'gene'])
     output:
         f"{FIGURES_DIR}/circos/circos.done"
     shell:

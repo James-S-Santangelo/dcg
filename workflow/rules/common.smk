@@ -24,16 +24,3 @@ def get_minimap_hap_vs_hap_input_files(wildcards):
 
     return { 'hap1' : hap1_fasta, 'hap2' : hap2_fasta }
 
-def get_gffToBed_input(wildcards):
-    """
-    Returns correct GFF file for conversion to BED
-    """
-    if wildcards.feat == 'repeat':
-        if wildcards.ref == 'utm':
-            gff = rules.repeat_masker.output.gff
-        else:
-            gff = rules.TrRvFive_repeatMask.output.gff
-    elif wildcards.feat == 'transcripts':
-        gff = expand(rules.gff_transcriptsOnly.output, ref=wildcards.ref)
-    
-    return(gff)
