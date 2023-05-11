@@ -78,6 +78,26 @@ rule makeblastdb_fromRef:
             -out {params.outfile}
         """
 
+rule create_karyotype_file_ref:
+    input:
+        rules.get_chrom_lengths.output
+    output:
+        f"{FIGURES_DIR}/circos/{{ref}}_karyotype.txt"
+    run:
+        if wildcards.ref == 'utm':
+            color = "mygreen"
+        else:
+            color = "myblue"
+        with open(output[0], 'w') as fout:
+            with open(input[0], 'r') as fin:
+                if wildcards.ref == 'utm':
+                    lines = reversed(fin.readlines())
+                else:
+                    lines = reversed(fin.readlines())
+                for line in lines:
+                    sline = line.strip().split('\t')
+                    fout.write(f"chr\t-\t{sline[0]}\t{sline[0]}\t0\t{sline[1]}\t{color}\n")
+
 ############################
 #### LINKAGE MAP CIRCOS ####
 ############################
@@ -124,25 +144,27 @@ rule generate_circos_genMap_links:
     script:
         "../scripts/r/generate_circos_genMap_links.R"
 
-rule create_karyotype_file_ref:
+rule utm_TrRFive_genMap_circos:
     input:
-        rules.get_chrom_lengths.output
+        expand(rules.create_karyotype_file_ref.output, ref=['utm', 'TrRv5']),
+        rules.generate_circos_genMap_links.output
     output:
-        f"{FIGURES_DIR}/circos/{{ref}}_karyotype.txt"
-    run:
-        if wildcards.ref == 'utm':
-            color = "mygreen"
-        else:
-            color = "myblue"
-        with open(output[0], 'w') as fout:
-            with open(input[0], 'r') as fin:
-                if wildcards.ref == 'utm':
-                    lines = fin.readlines()
-                else:
-                    lines = reversed(fin.readlines())
-                for line in lines:
-                    sline = line.strip().split('\t')
-                    fout.write(f"chr\t-\t{sline[0]}\t{sline[0]}\t0\t{sline[1]}\t{color}\n")
+        f"{FIGURES_DIR}/circos/refs_vs_genMap/utm_TrRFive_genMap_circos.png"
+    log: f"{LOG_DIR}/circos/utm_TrRFive_genMap_circos.log"
+    container: 'library://james-s-santangelo/circos/circos:v0.69-9'
+    params:
+        conf = '../config/utm_TrRv5_vs_genMap_circos.conf',
+        outdir = f"{FIGURES_DIR}/circos/refs_vs_genMap",
+        outfile = 'utm_TrRFive_genMap_circos.png'
+    shell:
+        """
+        circos -conf {params.conf} \
+            -png \
+            -nosvg \
+            -outputfile {params.outfile} \
+            -outputdir {params.outdir} 2> {log}
+        """
+
 
 ##############################
 #### UTM_TREP_v1.0 CIRCOS #### 
@@ -235,13 +257,36 @@ rule bedmap_featureCount:
             --delim '\t' \
             {input.win} {input.feat_bed} > {output} 2> {log}
         """
-      
-rule circos_done:
+
+rule utm_circos:
     input:
-        rules.generate_circos_genMap_links.output,
         expand(rules.create_karyotype_file_ref.output, ref = ['utm', 'TrRv5']),
         rules.bedtools_nuc.output,
         expand(rules.bedmap_featureCount.output, feat=['repeat', 'gene'])
+    output:
+        plot = f"{FIGURES_DIR}/circos/utm/utm_circos.png",
+        rev = f"{FIGURES_DIR}/circos/utm/data/utm_karyotype_reversed.txt"
+    log: f"{LOG_DIR}/circos/utm_TrRFive_genMap_circos.log"
+    container: 'library://james-s-santangelo/circos/circos:v0.69-9'
+    params:
+        conf = '../config/utm_circos.conf',
+        outdir = f"{FIGURES_DIR}/circos/utm",
+        outfile = 'utm_circos.png'
+    shell:
+        """
+        tac {input[0]} > {output.rev}
+        circos -conf {params.conf} \
+            -png \
+            -nosvg \
+            -param max_points_per_track=50000 \
+            -outputfile {params.outfile} \
+            -outputdir {params.outdir} 2> {log}
+        """
+      
+rule circos_done:
+    input:
+        rules.utm_TrRFive_genMap_circos.output,
+        rules.utm_circos.output
     output:
         f"{FIGURES_DIR}/circos/circos.done"
     shell:
