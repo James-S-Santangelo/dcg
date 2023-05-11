@@ -70,8 +70,27 @@ rule run_busco:
             --cpu {threads} &> {log}
         """
 
+rule functional_stats:
+    """
+    Use AGAT to generate summary statistics of functional annotation
+    """
+    input:
+        gff = rules.gff_sort_functional.output,
+        fasta = rules.repeat_masker.output.fasta
+    output:
+        directory(f"{QC_DIR}/agat_funcStats")
+    log: f"{LOG_DIR}/agat_funcStats/agat_funcStats.log"
+    container: 'docker://quay.io/biocontainers/agat:1.0.0--pl5321hdfd78af_0'
+    shell:
+        """
+        agat_sp_functional_statistics.pl --gff {input.gff} \
+            -gs {input.fasta} \
+            --output {output} 2> {log}
+        """
+
 rule qc_done:
     input:
+        rules.functional_stats.output,
         rules.quast_haploid_ref.output,
         rules.quast_diploid_ref.output,
         expand(rules.run_busco.output, db = ['embryophyta_odb10', 'fabales_odb10'])
