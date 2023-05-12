@@ -496,7 +496,7 @@ rule get_proteins:
         gff = rules.fix_transcriptID_attribute.output,
         ref = rules.repeat_masker.output.fasta
     output:
-        f"{ANNOTATION_DIR}/{ASSEMBLY_NAME}_proteins.fasta"
+        f"{ANNOTATION_DIR}/cleaned/{ASSEMBLY_NAME}_proteins.fasta"
     log: LOG_DIR + '/get_proteins/get_proteins.log'
     container: 'docker://teambraker/braker3'
     shell:
@@ -775,9 +775,26 @@ rule tableToAsn_haploid:
             -logfile {log} 2> {log}
         """
 
+rule get_final_proteins:
+    """
+    Get protein FASTA file using gffread
+    """
+    input:
+        gff = rules.gff_sort_functional.output,
+        ref = rules.repeat_masker.output.fasta
+    output:
+        f"{ANNOTATION_DIR}/{ASSEMBLY_NAME}_proteins_final.fasta"
+    log: LOG_DIR + '/get_proteins/get_final_proteins.log'
+    container: 'docker://teambraker/braker3'
+    shell:
+        """
+        gffread -E -y {output} -g {input.ref} {input.gff} 2> {log}
+        """
+
 rule annotation_done:
     input:
-        expand(rules.tableToAsn_haploid.output, chrom=CHROMOSOMES)
+        expand(rules.tableToAsn_haploid.output, chrom=CHROMOSOMES),
+        rules.get_final_proteins.output
     output:
         f"{ANNOTATION_DIR}/annotation.done"
     shell:

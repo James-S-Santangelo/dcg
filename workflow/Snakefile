@@ -52,7 +52,9 @@ ASSEMBLY_NAME = 'UTM_Trep_v1.0'
 wildcard_constraints:
     acc = '|'.join(RNASEQ_ACCESSIONS),
     hap = '|'.join(HAPS),
-    ref = '|'.join(['utm', 'TrRv5'])
+    ref = '|'.join(['utm', 'TrRv5']),
+    ass = '|'.join(['hap', 'dip1', 'dip2']),
+    db = '|'.join(['embryophyta_odb10', 'fabales_odb10'])
 
 include: 'rules/common.smk'
 

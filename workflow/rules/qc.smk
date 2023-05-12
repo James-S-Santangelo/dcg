@@ -45,24 +45,46 @@ rule quast_diploid_ref:
             {input} &> {log}
         """
 
-rule run_busco:
+rule run_busco_protein:
     """
     Assess annotation completeness by running BUSCO against both the embryophyta and Fabales databases.
     """
     input:
-        prot = rules.funannotate_annotate.output.prot 
+        prot = rules.get_final_proteins.output 
     output:
         directory(f"{QC_DIR}/busco/{ASSEMBLY_NAME}_{{db}}")
     log: LOG_DIR + '/busco/busco_{db}.log'
     conda: '../envs/qc.yaml'
-    threads: 32
+    threads: 24
     params:
         out_path = f"{QC_DIR}/busco/",
         out_name = f"{ASSEMBLY_NAME}_{{db}}"
     shell:
         """
         busco -m protein \
-            -i {input.prot} \
+            -i {input} \
+            -o {params.out_name} \
+            --out_path {params.out_path} \
+            --lineage {wildcards.db} \
+            --force \
+            --cpu {threads} &> {log}
+        """
+
+rule run_busco_genome:
+    input:
+        lambda w: rules.repeat_masker.output.fasta if w.ass == 'hap' else (rules.create_reference_assemblies.output.dip_hap1 if w.ass == 'dip1' else rules.create_reference_assemblies.output.dip_hap2)
+    output:
+        directory(f"{QC_DIR}/busco/{ASSEMBLY_NAME}_{{ass}}_{{db}}")
+    log: LOG_DIR + '/busco/busco_{{ass}}_{db}.log'
+    conda: '../envs/qc.yaml'
+    threads: 16
+    params:
+        out_path = f"{QC_DIR}/busco/",
+        out_name = f"{ASSEMBLY_NAME}_{{ass}}_{{db}}"
+    shell:
+        """
+        busco -m genome\
+            -i {input} \
             -o {params.out_name} \
             --out_path {params.out_path} \
             --lineage {wildcards.db} \
@@ -93,7 +115,8 @@ rule qc_done:
         rules.functional_stats.output,
         rules.quast_haploid_ref.output,
         rules.quast_diploid_ref.output,
-        expand(rules.run_busco.output, db = ['embryophyta_odb10', 'fabales_odb10'])
+        expand(rules.run_busco_protein.output, db = ['embryophyta_odb10', 'fabales_odb10']),
+        expand(rules.run_busco_genome.output, ass = ['hap', 'dip1', 'dip2'], db = ['embryophyta_odb10', 'fabales_odb10'])
     output:
         f'{QC_DIR}/qc.done'
     shell:
