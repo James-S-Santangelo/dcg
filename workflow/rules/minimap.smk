@@ -117,7 +117,7 @@ rule dotplot_haps_combined:
         f"{FIGURES_DIR}/dotplots/haps_combined/{{ver}}_haps.pdf"
     conda: '../envs/qc.yaml'
     script:
-        "../scripts/r/dotplot_hap_vs_hap.R"
+        "../scripts/r/dotplot_haps_combined.R"
 
 rule minimap_done:
     input:
