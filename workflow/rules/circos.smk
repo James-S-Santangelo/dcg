@@ -4,6 +4,9 @@
 ###############
 
 rule TrRvFive_chromsOnly:
+    """
+    Subset previosu Griffiths assembly into new fasta containing only the chromosomes
+    """
     input:
        TRR_FIVE_FASTA
     output:
@@ -20,6 +23,9 @@ rule TrRvFive_chromsOnly:
         """
 
 rule index_fasta_chromsOnly:
+    """
+    Index chromosome-only Griffiths fasta
+    """
     input:
         rules.split_fasta_toChroms_andOrganelles.output.chroms
     output:
@@ -31,6 +37,9 @@ rule index_fasta_chromsOnly:
         """
 
 rule get_chrom_lengths:
+    """
+    Get chromosome/scaffold lengths for either Griffiths or new UTM assembly
+    """
     input:
         lambda w: rules.index_fasta_chromsOnly.output if w.ref == 'utm' else rules.TrRvFive_chromsOnly.output.fai
     output:
@@ -42,6 +51,9 @@ rule get_chrom_lengths:
         """
 
 rule bedtools_makewindows:
+    """
+    Use bedtools to create 100 Kb windows with a 20 Kb step
+    """
     input:
         chr_len = rules.get_chrom_lengths.output
     output:
@@ -79,6 +91,9 @@ rule makeblastdb_fromRef:
         """
 
 rule create_karyotype_file_ref:
+    """
+    Create Circos-formatted karyotype files for Griffiths and UTM reference
+    """
     input:
         rules.get_chrom_lengths.output
     output:
@@ -130,6 +145,9 @@ rule blast_linkageMarkers_toRef:
         """
 
 rule generate_circos_genMap_links:
+    """
+    Create Circos-formatted link and highlight files for linkage markers and thei physical positions in both reference genomes
+    """
     input:
         expand(rules.blast_linkageMarkers_toRef.output, map_pop=['SG', 'DG'], ref=['utm', 'TrRv5']),
         f"{GENMAP_RESOURCE_DIR}/DG_marker_key.csv",
@@ -145,6 +163,9 @@ rule generate_circos_genMap_links:
         "../scripts/r/generate_circos_genMap_links.R"
 
 rule utm_TrRFive_genMap_circos:
+    """
+    Figure 1: Generate Circos plot with Linkage Markers aligned to both references, with lines colored based on whether they align to the correct LG
+    """
     input:
         expand(rules.create_karyotype_file_ref.output, ref=['utm', 'TrRv5']),
         rules.generate_circos_genMap_links.output
@@ -173,6 +194,9 @@ rule utm_TrRFive_genMap_circos:
 #### GC CONTENT ####
 
 rule bedtools_nuc:
+    """
+    Use Bedtools nuc to estimate GC% in windows across the UTM reference
+    """
     input:
         fasta = rules.split_fasta_toChroms_andOrganelles.output.chroms,
         bed = expand(rules.bedtools_makewindows.output.bed, ref = 'utm')
@@ -189,6 +213,9 @@ rule bedtools_nuc:
 #### GENE AND REPEAT DENSITY ####
 
 rule gff_genesOnly:
+    """
+    Filter GFF to only include gene features
+    """
     input:
         rules.gff_sort_functional.output 
     output:
@@ -204,6 +231,9 @@ rule gff_genesOnly:
                             fout.write(f"{line}")
 
 rule gffToBed:
+    """
+    Convert Genes or Repeat (i.e. from Repeat Masker) GFF to BED files
+    """
     input:
         lambda w: rules.repeat_masker.output.gff if w.feat == 'repeat' else rules.gff_genesOnly.output  
     output:
@@ -216,6 +246,9 @@ rule gffToBed:
         """
 
 rule chromLengths_toBed:
+    """
+    Convert chromosmal length text files to BED format with start and end coordinates
+    """
     input:
         bed = expand(rules.get_chrom_lengths.output, ref = 'utm')
     output:
@@ -227,6 +260,9 @@ rule chromLengths_toBed:
         """
 
 rule bedops:
+    """
+    Use Bedops to generated bedmap-compatible windows file. Windows are 100 kb with 20 kb step
+    """
     input:
         bed = rules.chromLengths_toBed.output
     output:
@@ -242,6 +278,9 @@ rule bedops:
         """
 
 rule bedmap_featureCount:
+    """
+    Use Bedmap to estimate gene and repeat density in windows across the genome
+    """
     input:
         win = rules.bedops.output,
         feat_bed = rules.gffToBed.output
@@ -259,6 +298,10 @@ rule bedmap_featureCount:
         """
 
 rule utm_circos:
+    """
+    Figure 2: Generate Circos plot of UTM haploid mapping reference with GC%. gene density, and repeat density tracks. Used as template.
+    Picture in center added afterwards in Inkscape.
+    """
     input:
         expand(rules.create_karyotype_file_ref.output, ref = ['utm', 'TrRv5']),
         rules.bedtools_nuc.output,
