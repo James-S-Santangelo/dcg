@@ -285,14 +285,16 @@ rule bedmap_featureCount:
         win = rules.bedops.output,
         feat_bed = rules.gffToBed.output
     output:
-        f"{FIGURES_DIR}/circos/utm/data/utm_{{feat}}_count.txt"
+        f"{FIGURES_DIR}/circos/utm/data/utm_{{feat}}.txt"
     conda: '../envs/circos.yaml'
     log: f"{LOG_DIR}/feature_count/utm_{{feat}}_count.log"
+    params:
+        val = lambda wildcards: 'count' if wildcards.feat == 'gene' else 'bases-uniq-f'
     shell:
         """
         bedmap \
             --echo \
-            --count \
+            --{params.val} \
             --delim '\t' \
             {input.win} {input.feat_bed} > {output} 2> {log}
         """
