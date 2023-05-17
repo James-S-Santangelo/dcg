@@ -25,14 +25,9 @@ IPRSCAN_DATA = f"{RESOURCES}/interproscan-5.61-93.0/data"
 ORGANELLE_SEQS = f"{RESOURCES}/organelles/organelle_seqs.fasta"
 TRR_FIVE_SCAFFS = f"{RESOURCES}/TrR_v5_scaff_byLG.csv"
 TRR_FIVE_FASTA = config['TrR_five_fasta']
-TRR_FIVE_GTF = config['TrR_five_gtf']
 NCBI_TEMPLATE = f"{RESOURCES}/ncbi_template.sbt" 
 CHROMOSOMES = pd.read_table(f"{RESOURCES}/UTM_Trep_v1.0_chroms.txt", header=None).iloc[:,0].tolist()
 RNASEQ_ACCESSIONS = pd.read_csv(f"{RESOURCES}/Trepens_rnaseq_accessions_select.txt", sep = '\t')['accession'].tolist()
-
-# Reads to compare mapping againstnew and old reference genomes
-READ1 = f"{RESOURCES}/R1.fq.gz"
-READ2 = f"{RESOURCES}/R2.fq.gz"
 
 # Paths for output files
 LOG_DIR = config['log_prefix']
