@@ -1,9 +1,0 @@
-channels:
-  - conda-forge
-  - bioconda
-dependencies:
-  - python
-  - gffutils
-  - pip
-  - pip:
-    - gff3tool

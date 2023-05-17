@@ -293,7 +293,7 @@ rule braker_protein:
         genemark = GENEMARK,
         prothint = PROTHINT,
     threads: 30
-    container: 'docker://teambraker/braker3' 
+    container: 'docker://teambraker/braker3:v.1.0.0' 
     shell:
         """
         braker.pl --genome {input.masked_genome} \
@@ -340,7 +340,7 @@ rule braker_rnaseq:
         outputdir = f"{ANNOTATION_DIR}/braker/rnaseq",
         genemark=GENEMARK
     threads: 30
-    container: 'docker://teambraker/braker3' 
+    container: 'docker://teambraker/braker3:v.1.0.0' 
     shell:
         """
         braker.pl --genome {input.masked_genome} \
@@ -367,7 +367,7 @@ rule tsebra_combine:
     output:
         braker_combined = f"{ANNOTATION_DIR}/braker/tsebra/braker_combined.gtf"
     log: LOG_DIR + '/braker/tsebra.log'
-    container: 'docker://teambraker/braker3'
+    container: 'docker://teambraker/braker3:v.1.0.0'
     params:
         config = '../config/tsebra.cfg',
     shell:
@@ -388,7 +388,7 @@ rule rename_tsebra_gtf:
         gtf = f"{ANNOTATION_DIR}/braker/tsebra/braker_combined_renamed.gtf",
         tab = f"{ANNOTATION_DIR}/braker/tsebra/tsebra_rename_translationTab.txt"
     log: LOG_DIR + '/braker/rename_gtf.log'
-    container: 'docker://teambraker/braker3'
+    container: 'docker://teambraker/braker3:v.1.0.0'
     shell:
         """
         rename_gtf.py --gtf {input} \
@@ -498,7 +498,7 @@ rule get_proteins:
     output:
         f"{ANNOTATION_DIR}/cleaned/{ASSEMBLY_NAME}_proteins.fasta"
     log: LOG_DIR + '/get_proteins/get_proteins.log'
-    container: 'docker://teambraker/braker3'
+    container: 'docker://teambraker/braker3:v.1.0.0'
     shell:
         """
         gffread -E -y {output} -g {input.ref} {input.gff} 2> {log}
@@ -542,7 +542,7 @@ rule funannotate_setup:
     output:
         directory(f"{ANNOTATION_DIR}/funannotate/fun_db")
     log: LOG_DIR + '/funannotate/funannotate_setup.log'
-    container: '/home/santang3/singularity_containers/funannotate.sif'
+    container: 'docker://nextgenusfs/funannotate:v1.8.15'
     shell:
         """
         funannotate setup --database {output} -b embryophyta --force 2> {log}
@@ -554,7 +554,7 @@ rule dl_eggnog_db:
     """
     output:
         directory(f"{ANNOTATION_DIR}/eggnog/eggnog_db")
-    conda: '../envs/eggnog.yaml'
+    conda: '../envs/annotation.yaml'
     shell:
         """
         mkdir -p {output}
@@ -572,7 +572,7 @@ rule run_eggnog_mapper:
         annot = f"{ANNOTATION_DIR}/eggnog/{ASSEMBLY_NAME}.emapper.annotations"
     log: LOG_DIR + '/eggnog/aggnog_mapper.log'
     threads: 24
-    conda: '../envs/eggnog.yaml'
+    conda: '../envs/annotation.yaml'
     params:
         out = f"{ANNOTATION_DIR}/eggnog/{ASSEMBLY_NAME}"
     shell:
@@ -670,7 +670,7 @@ rule fixEC_incrementCDS_addLocusTags:
         ec = rules.download_ec_numbers.output
     output:
         f"{ANNOTATION_DIR}/cleaned/{ASSEMBLY_NAME}_functional_ECfix_wLocusTags.gff"
-    conda: '../envs/gffutils.yaml'
+    conda: '../envs/annotation.yaml'
     params:
         locus_tag = 'P8452'
     script:
@@ -685,7 +685,7 @@ rule fixProducts_ncbiErrors:
     output:
         db = f"{PROGRAM_RESOURCE_DIR}/gffutils/{ASSEMBLY_NAME}_fixProducts.gffdb",
         gff = f"{ANNOTATION_DIR}/cleaned/{ASSEMBLY_NAME}_functional_productFix.gff3"
-    conda: '../envs/gffutils.yaml'
+    conda: '../envs/annotation.yaml'
     script:
         "../scripts/python/fixProducts_ncbiErrors.py"
 
@@ -698,7 +698,7 @@ rule fix_overlappingGenes_remapIDs:
     output:
         db = f"{PROGRAM_RESOURCE_DIR}/gffutils/{ASSEMBLY_NAME}_fixOverlaps.gffdb", 
         gff = f"{ANNOTATION_DIR}/cleaned/{ASSEMBLY_NAME}_functional_final.gff3"
-    conda: '../envs/gffutils.yaml'
+    conda: '../envs/annotation.yaml'
     script:
          "../scripts/python/fixOverlaps_remapIDs.py"
 
@@ -711,7 +711,7 @@ rule gff_sort_functional:
     output:
         f"{ANNOTATION_DIR}/{ASSEMBLY_NAME}_functional_final_sorted.gff3"
     log: LOG_DIR + '/gff_sort/gff_sort_functional.log'
-    conda: '../envs/gffutils.yaml'
+    conda: '../envs/annotation.yaml'
     shell:
         """
         gff3_sort -g {input} -r -og {output} 2> {log}
@@ -785,7 +785,7 @@ rule get_final_proteins:
     output:
         f"{ANNOTATION_DIR}/{ASSEMBLY_NAME}_proteins_final.fasta"
     log: LOG_DIR + '/get_proteins/get_final_proteins.log'
-    container: 'docker://teambraker/braker3'
+    container: 'docker://teambraker/braker3:v.1.0.0'
     shell:
         """
         gffread -E -y {output} -g {input.ref} {input.gff} 2> {log}
