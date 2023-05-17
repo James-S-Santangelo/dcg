@@ -110,13 +110,26 @@ rule functional_stats:
             --output {output} 2> {log}
         """
 
+rule genes_repeats_overlap:
+    input:
+        repeats = expand(rules.gffToBed.output, feat = "repeat"),
+        genes = expand(rules.gffToBed.output, feat = "gene")
+    output:
+        f"{QC_DIR}/repeat_gene_overlap.txt"
+    conda: '../envs/circos.yaml'
+    shell:
+        """
+        bedtools intersect -a {input.genes} -b {input.repeats} -wa -f 1 > {output}
+        """
+
 rule qc_done:
     input:
         rules.functional_stats.output,
         rules.quast_haploid_ref.output,
         rules.quast_diploid_ref.output,
         expand(rules.run_busco_protein.output, db = ['embryophyta_odb10', 'fabales_odb10']),
-        expand(rules.run_busco_genome.output, ass = ['hap', 'dip1', 'dip2'], db = ['embryophyta_odb10', 'fabales_odb10'])
+        expand(rules.run_busco_genome.output, ass = ['hap', 'dip1', 'dip2'], db = ['embryophyta_odb10', 'fabales_odb10']),
+        rules.genes_repeats_overlap.output
     output:
         f'{QC_DIR}/qc.done'
     shell:
