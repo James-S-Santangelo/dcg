@@ -52,9 +52,20 @@ rule get_subgenome_proteins:
         gffread -y {output} -g {input.ref} {input.gff}
         """
 
+rule genespace:
+    input:
+        flag = expand(rules.get_subgenome_proteins.output, sg=['Pall', 'Occ']),
+        dir = f"{GENESPACE_DIR}/genome_dir"
+    output:
+        directory(f"{GENESPACE_DIR}/output")
+    container: 'library://james-s-santangelo/genespace/genespace:1.2.3'
+    threads: 24
+    script:
+        "../scripts/r/genespace.R"
+
 rule genespace_done:
     input:
-        expand(rules.get_subgenome_proteins.output, sg=['Pall', 'Occ'])
+        rules.genespace.output
     output:
         f"{GENESPACE_DIR}/genespace.done"
     shell:
