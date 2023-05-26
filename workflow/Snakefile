@@ -40,6 +40,7 @@ QC_DIR = f"{config['results_prefix']}/qc"
 FIGURES_DIR = f"{config['results_prefix']}/figures"
 REVISED_HAP_DIR = f"{config['results_prefix']}/revised_haplotypes"
 NCBI_DIR = f"{config['results_prefix']}/ncbi"
+GENESPACE_DIR = f"{config['results_prefix']}/genespace"
 
 HAP_VS_HAP = [f'{i}-{j}' for i in HAPS for j in HAPS if i != j]
 ASSEMBLY_NAME = 'UTM_Trep_v1.0'
@@ -60,11 +61,13 @@ rule all:
         f'{REFERENCE_ASSEMBLIES_DIR}/reference_assemblies.done',
         f"{ANNOTATION_DIR}/annotation.done",
         f'{QC_DIR}/qc.done',
-        f"{FIGURES_DIR}/circos/circos.done"
+        f"{FIGURES_DIR}/circos/circos.done",
+        f"{GENESPACE_DIR}/genespace.done"
 
 include: 'rules/minimap.smk'
 include: 'rules/blast.smk'
 include: 'rules/assemble_references.smk'
 include: 'rules/annotation.smk'
+include: 'rules/genespace.smk'
 include: 'rules/circos.smk'
 include: 'rules/qc.smk'

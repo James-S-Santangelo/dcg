@@ -7,6 +7,7 @@ def get_haplotype_fasta(wildcards):
     fasta = glob.glob(f"{HAPLOTYPE_FASTA_DIR}/{wildcards.hap}.fasta")[0]
     return fasta
 
+
 def get_minimap_hap_vs_hap_input_files(wildcards):
     """
     Retrieves input files for rule mapping each haplotype against the other using Minimap. 
@@ -24,3 +25,8 @@ def get_minimap_hap_vs_hap_input_files(wildcards):
 
     return { 'hap1' : hap1_fasta, 'hap2' : hap2_fasta }
 
+
+def get_create_subgenome_fasta_input(wildcards):
+    all_fasta = expand(rules.split_chromosomal_fasta.output, chrom=CHROMOSOMES)
+    sg_fastas = [fa for fa in all_fasta if wildcards.sg in os.path.basename(fa)]
+    return sg_fastas
