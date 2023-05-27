@@ -7,6 +7,7 @@ wd <- snakemake@output[[1]]
 path2mcscanx <- "/opt/MCScanX-master"
 ###############################################
 
+sink(snakemake@log[[1]])
 # -- parse the annotations to fastas with headers that match a gene bed file
 parsedPaths <- parse_annotations(
   rawGenomeRepo = genomeRepo,
@@ -17,17 +18,17 @@ parsedPaths <- parse_annotations(
   headerSep = " ",
   gffStripText = "",
   headerStripText = "",
-  troubleShoot = TRUE,
   genespaceWd = wd,
 )
 
 # -- initalize the run and QC the inputs
 gpar <- init_genespace(
   wd = wd,
-  path2mcscanx = path2mcscanx,
   useHOGs = TRUE,
   orthofinderInBlk = TRUE,
+  path2mcscanx = path2mcscanx,
   nCores = snakemake@threads)
 
 # -- accomplish the run
 out <- run_genespace(gpar)
+sink()

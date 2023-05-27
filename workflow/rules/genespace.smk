@@ -58,6 +58,7 @@ rule genespace:
         dir = f"{GENESPACE_DIR}/genome_dir"
     output:
         directory(f"{GENESPACE_DIR}/output")
+    log: f'{LOG_DIR}/genespace/genespace.log'
     container: 'library://james-s-santangelo/genespace/genespace:1.2.3'
     threads: 24
     script:
