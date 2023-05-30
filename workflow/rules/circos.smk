@@ -52,7 +52,7 @@ rule get_chrom_lengths:
 
 rule bedtools_makewindows:
     """
-    Use bedtools to create 100 Kb windows with a 20 Kb step
+    Use bedtools to create 500 Kb windows with a 100 Kb step
     """
     input:
         chr_len = rules.get_chrom_lengths.output
@@ -64,8 +64,8 @@ rule bedtools_makewindows:
         """
         bedtools makewindows \
             -g {input.chr_len} \
-            -w 100000  \
-            -s 20000 \
+            -w 500000  \
+            -s 100000 \
             -i srcwinnum > {output.bed} 2> {log}
         """
 
@@ -261,7 +261,7 @@ rule chromLengths_toBed:
 
 rule bedops:
     """
-    Use Bedops to generated bedmap-compatible windows file. Windows are 100 kb with 20 kb step
+    Use Bedops to generated bedmap-compatible windows file. Windows are 500 kb with 100 kb step
     """
     input:
         bed = rules.chromLengths_toBed.output
@@ -272,8 +272,8 @@ rule bedops:
     shell:
         """
         bedops \
-            --chop 100000 \
-            --stagger 20000 \
+            --chop 500000 \
+            --stagger 100000 \
             -x {input.bed} > {output} 2> {log}
         """
 
