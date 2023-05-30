@@ -155,9 +155,12 @@ rule generate_circos_genMap_links:
         f"{GENMAP_RESOURCE_DIR}/DG_genMap.csv",
         f"{GENMAP_RESOURCE_DIR}/SG_genMap.csv"
     output:
-        f"{FIGURES_DIR}/circos/refs_vs_genMap/data/genMap_karyotype.txt",
-        expand(f"{FIGURES_DIR}/circos/refs_vs_genMap/data/{{match}}_genMap_links.txt", match = ['match', 'nomatch']),
-        f"{FIGURES_DIR}/circos/refs_vs_genMap/data/genMap_markerPositions.txt"
+        f"{FIGURES_DIR}/circos/refs_vs_genMap/data/DG_genMap_karyotype.txt",
+        expand(f"{FIGURES_DIR}/circos/refs_vs_genMap/data/DG_{{match}}_genMap_links.txt", match = ['match', 'nomatch']),
+        f"{FIGURES_DIR}/circos/refs_vs_genMap/data/DG_genMap_markerPositions.txt",
+        f"{FIGURES_DIR}/circos/refs_vs_genMap/data/SG_genMap_karyotype.txt",
+        expand(f"{FIGURES_DIR}/circos/refs_vs_genMap/data/SG_{{match}}_genMap_links.txt", match = ['match', 'nomatch']),
+        f"{FIGURES_DIR}/circos/refs_vs_genMap/data/SG_genMap_markerPositions.txt"
     conda: '../envs/circos.yaml'
     script:
         "../scripts/r/generate_circos_genMap_links.R"
@@ -170,13 +173,13 @@ rule utm_TrRFive_genMap_circos:
         expand(rules.create_karyotype_file_ref.output, ref=['utm', 'TrRv5']),
         rules.generate_circos_genMap_links.output
     output:
-        f"{FIGURES_DIR}/circos/refs_vs_genMap/utm_TrRFive_genMap_circos.png"
-    log: f"{LOG_DIR}/circos/utm_TrRFive_genMap_circos.log"
+        f"{FIGURES_DIR}/circos/refs_vs_genMap/utm_TrRFive_genMap{{map_pop}}_circos.png"
+    log: f"{LOG_DIR}/circos/utm_TrRFive_genMap{{map_pop}}_circos.log"
     container: 'library://james-s-santangelo/circos/circos:v0.69-9'
     params:
-        conf = '../config/utm_TrRv5_vs_genMap_circos.conf',
+        conf = lambda w: '../config/utm_TrRv5_vs_genMapDG_circos.conf' if w.map_pop == 'DG' else '../config/utm_TrRv5_vs_genMapSG_circos.conf',
         outdir = f"{FIGURES_DIR}/circos/refs_vs_genMap",
-        outfile = 'utm_TrRFive_genMap_circos.png'
+        outfile = 'utm_TrRFive_genMap{map_pop}_circos.png'
     shell:
         """
         circos -conf {params.conf} \
@@ -330,7 +333,7 @@ rule utm_circos:
       
 rule circos_done:
     input:
-        rules.utm_TrRFive_genMap_circos.output,
+        expand(rules.utm_TrRFive_genMap_circos.output, map_pop = ['SG', 'DG']),
         rules.utm_circos.output
     output:
         f"{FIGURES_DIR}/circos/circos.done"
