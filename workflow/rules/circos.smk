@@ -167,7 +167,8 @@ rule generate_circos_genMap_links:
 
 rule utm_TrRFive_genMap_circos:
     """
-    Figure 1: Generate Circos plot with Linkage Markers aligned to both references, with lines colored based on whether they align to the correct LG
+    Figure 1 and S3: Generate Circos plot with Linkage Markers aligned to both references, 
+    with lines colored based on whether they align to the correct LG. Done for DG and SG populations
     """
     input:
         expand(rules.create_karyotype_file_ref.output, ref=['utm', 'TrRv5']),

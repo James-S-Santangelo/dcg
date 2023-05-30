@@ -159,8 +159,8 @@ TrRv5_genMap_links_DG <- filtered_markers_DG %>%
   ))
 
 # Link files for markers that match and or don"t match correctLG
-allLinks <- bind_rows(utm_genMap_links_DG, TrRv5_genMap_links_DG)
-matchLinks_DG <- allLinks %>%
+allLinks_DG <- bind_rows(utm_genMap_links_DG, TrRv5_genMap_links_DG)
+matchLinks_DG <- allLinks_DG %>%
   filter(LG == corr_LG) %>%
   dplyr::select(sseqid, cspos, cepos, LG, lspos, lepos)
 write_delim(matchLinks_DG, match_gm_links_DG, col_names = FALSE, delim = "\t")
@@ -175,8 +175,16 @@ marker_pos_DG <- utm_genMap_links_DG %>%
   dplyr::select(LG, lspos, lepos)
 write_delim(marker_pos_DG, markerPos_DG, col_names = FALSE, delim = "\t")
 
+alllinks_DG %>%
+  mutate(is_match = ifelse(color == 'grey', 1, 0)) %>%
+  group_by(color) %>%
+  summarise(n = n(),
+            matches = sum(is_match),
+            prop = matches / n)
+  
+
 ###############################
-#### DG MAPPING POPULATION ####
+#### SG MAPPING POPULATION ####
 ###############################
 
 filtered_markers_SG <- filtered_markers %>%
@@ -223,8 +231,8 @@ LG_karyotype_SG <- filtered_markers_SG %>%
 write_delim(LG_karyotype_SG, gm_kar_SG, delim = "\t", col_names = F)
 
 # Link files for markers that match and or don"t match correctLG
-allLinks <- bind_rows(utm_genMap_links_SG, TrRv5_genMap_links_SG)
-matchLinks_SG <- allLinks %>%
+allLinks_SG <- bind_rows(utm_genMap_links_SG, TrRv5_genMap_links_SG)
+matchLinks_SG <- allLinks_SG %>%
   filter(LG == corr_LG) %>%
   dplyr::select(sseqid, cspos, cepos, LG, lspos, lepos)
 write_delim(matchLinks_SG, match_gm_links_SG, col_names = FALSE, delim = "\t")
@@ -238,3 +246,10 @@ write_delim(noMatchLinks_SG, nomatch_gm_links_SG, col_names = FALSE, delim = "\t
 marker_pos_SG <- utm_genMap_links_SG %>%
   dplyr::select(LG, lspos, lepos)
 write_delim(marker_pos_SG, markerPos_SG, col_names = FALSE, delim = "\t")
+
+alllinks_SG %>%
+  mutate(is_match = ifelse(color == 'grey', 1, 0)) %>%
+  group_by(color) %>%
+  summarise(n = n(),
+            matches = sum(is_match),
+            prop = matches / n)
