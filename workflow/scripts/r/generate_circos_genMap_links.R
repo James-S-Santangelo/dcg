@@ -165,7 +165,7 @@ matchLinks_DG <- allLinks_DG %>%
   dplyr::select(sseqid, cspos, cepos, LG, lspos, lepos)
 write_delim(matchLinks_DG, match_gm_links_DG, col_names = FALSE, delim = "\t")
 
-noMatchLinks_DG <- allLinks %>%
+noMatchLinks_DG <- allLinks_DG %>%
   filter(LG != corr_LG) %>%
   dplyr::select(sseqid, cspos, cepos, LG, lspos, lepos)
 write_delim(noMatchLinks_DG, nomatch_gm_links_DG, col_names = FALSE, delim = "\t")
@@ -175,9 +175,9 @@ marker_pos_DG <- utm_genMap_links_DG %>%
   dplyr::select(LG, lspos, lepos)
 write_delim(marker_pos_DG, markerPos_DG, col_names = FALSE, delim = "\t")
 
-alllinks_DG %>%
+allLinks_DG %>%
   mutate(is_match = ifelse(color == 'grey', 1, 0)) %>%
-  group_by(color) %>%
+  group_by(ref) %>%
   summarise(n = n(),
             matches = sum(is_match),
             prop = matches / n)
@@ -237,7 +237,7 @@ matchLinks_SG <- allLinks_SG %>%
   dplyr::select(sseqid, cspos, cepos, LG, lspos, lepos)
 write_delim(matchLinks_SG, match_gm_links_SG, col_names = FALSE, delim = "\t")
 
-noMatchLinks_SG <- allLinks %>%
+noMatchLinks_SG <- allLinks_SG %>%
   filter(LG != corr_LG) %>%
   dplyr::select(sseqid, cspos, cepos, LG, lspos, lepos)
 write_delim(noMatchLinks_SG, nomatch_gm_links_SG, col_names = FALSE, delim = "\t")
@@ -247,9 +247,9 @@ marker_pos_SG <- utm_genMap_links_SG %>%
   dplyr::select(LG, lspos, lepos)
 write_delim(marker_pos_SG, markerPos_SG, col_names = FALSE, delim = "\t")
 
-alllinks_SG %>%
+allLinks_SG %>%
   mutate(is_match = ifelse(color == 'grey', 1, 0)) %>%
-  group_by(color) %>%
+  group_by(ref) %>%
   summarise(n = n(),
             matches = sum(is_match),
             prop = matches / n)
