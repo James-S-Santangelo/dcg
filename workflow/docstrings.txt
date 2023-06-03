@@ -1,17 +1,25 @@
-TrRvSix_vs_TrRvFive_and_LG
-    Determines which of the revised haplotypes correspond to which chromosome based on (1) minimap alignments to previous reference genome from Griffiths et al. (2019) and (2) blast alignments of linkage markers from Olsen et. al (2022) F2 mapping population to each haplotype. 
-
-    Produces a number of outputs used to later generate the reference assemblies including: (1) Plot of number of BLAST hits for each linkage group and subgenome, (2) CSV file with lengths of each chromosome in new haplotypes, (3) CSV file with longest chromosome from each of the two haplotypes for each chromosome, (4) Plot of alignments to previous assembly to determine correct orientation of chromosomes, (5) CSV file with list of chromosomes that need to be reverse complemented to match previous assembly.
+TrRvFive_chromsOnly
+    Subset previosu Griffiths assembly into new fasta containing only the chromosomes
 align_star
     Align downloaded RNAseq reads to softmasked haploid reference assembly using STAR in two-pass mode.
     Set max intron length to 10000.
 all
 annotation_done
+bedmap_featureCount
+    Use Bedmap to estimate gene and repeat density in windows across the genome
+bedops
+    Use Bedops to generated bedmap-compatible windows file. Windows are 500 kb with 100 kb step
+bedtools_makewindows
+    Use bedtools to create 500 Kb windows with a 100 Kb step
+bedtools_nuc
+    Use Bedtools nuc to estimate GC% in windows across the UTM reference
 blast_done
 blast_hcn_loci
     BLAST known sequences for HCN loci against the revised haplptypes to identify which haplotypes contain functional copies of Ac and Li.
-blast_markers
+blast_linkageMarkers
     BLASTs linkage markers from Olsen et al. (2022) F2 mapping populations against the revised haplptypes. Used to determine linkage groups and chromosomes.
+blast_linkageMarkers_toRef
+    BLASTs linkage markers from Olsen et al. (2022) F2 mapping populations against UTM or Griggiths references. Used to generate Circos plot with markers connected to both reference
 blast_organelle_seqs
     BLAST known mitochondrial and chloroplast sequences against the revised haplotypes to identify which scaffolds correspond to the organelles in each haplotype FASTA.
 braker_protein
@@ -22,17 +30,28 @@ build_repeat_modeler_db
     Build RepeatModeler Database from haploid mapping reference assembly
 build_star
     Build STAR Database from softmasked haploid mapping reference assembly
+chromLengths_toBed
+    Convert chromosmal length text files to BED format with start and end coordinates
+circos_done
+combine_haps
+    Rule to separately combine Pall and Occ Hap1, and Pall and Occ Hap2 for global Minimap alignment
 combine_protein_dbs
     Combine the Green Plant OrthoDB and Fabaceae UniProKB protein databases. This will be used as input to BRAKER in protein mode.
 configure_repbase
     Configure RepBase Database for use with RepeatModeler
-count_uniprot_seqs
-    Counts uniprot proteins by taxonomic group
+create_karyotype_file_ref
+    Create Circos-formatted karyotype files for Griffiths and UTM reference
 create_reference_assemblies
     Creates haploid mapping reference assembly and phased diploid assembly from revised haplotype sequences.
+create_subgenome_fasta
+    Creates a fasta with the chromosomes for each subgenome
+create_subgenome_gff
+    Create GFF file for each subgenome
 dl_eggnog_db
     Download databases for EggNog-mapper
 dotplot_hap_vs_hap
+    Generate simple dotplot of alignments of pairwise haplotype alignments.
+dotplot_haps_combined
     Generate simple dotplot of alignments of one haplotype mapped against the other.
 download_ec_numbers
     Download Enzyme Commission numbers from ExPASSY
@@ -42,29 +61,59 @@ download_uniprot_fabaceae_db
     Download all Fabaceae proteins from UniProtKB
 fasterq_dump
     Download pre-fetched RNAseq libraries used for structural gene annotation
-fixAtts_stopCodons
-    Fix product annotations and reassign attributes based on NCBI input GFF3 requirements
-fixEC_CDSincrement_locusTags
+fixEC_incrementCDS_addLocusTags
     Remap Hypothetical Proteins based on fully-resolved EC Numbers. Delete EC Number of not fully-resolved.
     Increment CDS IDs so they're unique.
+fixProducts_ncbiErrors
+    Fix product annotations and reassign attributes based on NCBI input GFF3 requirements
 fix_haplotypes
     Imposes manual fixes of raw Dovetail haplotypes and generates FASTA files with revised haplotype sequences.
+fix_overlappingGenes_remapIDs
+    Remove overlapping genes where one gene is nested within the other and CDSs overlap
+fix_transcriptID_attribute
+    Fix transcript IDs for genes with alternative mRNA isoforms and remove transcript_id from gene features
 funannotate_annotate
     Use Funannotate to combine InterProScan and Eggnog annotations and generate additional functional annotations
 funannotate_setup
     Download Databases for Funannotate
+functional_stats
+    Use AGAT to generate summary statistics of functional annotation
+generate_circos_genMap_links
+    Create Circos-formatted link and highlight files for linkage markers and thei physical positions in both reference genomes
+genes_repeats_overlap
+genespace
+genespace_done
+get_chrom_lengths
+    Get chromosome/scaffold lengths for either Griffiths or new UTM assembly
+get_final_proteins
+    Get protein FASTA file using gffread
 get_proteins
     Get protein FASTA file using gffread
-gff_sort
-    Sort GFF3 using genome tools
+get_subgenome_proteins
+    Extract proteins for each subgenome
+gffToBed
+    Convert Genes or Repeat (i.e. from Repeat Masker) GFF to BED files
+gff_genesOnly
+    Filter GFF to only include gene features
 gff_sort_functional
     Sort GFF3 with functional annotations using GFF3_sort Perl script. Can't use genometools here since sorting not compatible with table2asn
 gtf_to_gff
     Convert BRAKER-generated GTF to GFF3 using AGAT
 gzip_fastq
     Gzip downloaded RNAseq libraries
+identify_chromosomes_linkageGroups
+    Determines which of the revised haplotypes correspond to which chromosome based on (1) minimap alignments to previous reference genome from Griffiths et al. (2019) and (2) blast alignments of linkage markers from Olsen et. al (2022) F2 mapping population to each haplotype. 
+
+    Produces a number of outputs used to later generate the reference assemblies including: (1) Plot of number of BLAST hits for each linkage group and subgenome, (2) CSV file with lengths of each chromosome in new haplotypes, (3) CSV file with longest chromosome from each of the two haplotypes for each chromosome, (4) CSV file with mappings of chromosomes in the new haploid assembly to those in the previous assembly, (5) Plot of alignments to previous assembly to determine correct orientation of chromosomes, (6) CSV file with list of chromosomes that need to be reverse complemented to match previous assembly.
+index_fasta_chromsOnly
+    Index chromosome-only Griffiths fasta
+keep_longest_isoform
+    Uses GFFutil module to iterate through features and keep only the 
+    longest isoform for each gene
 makeblastdb_fromHaplotypeFasta
     Creates BLAST Database from revised haplotype sequences.
+makeblastdb_fromRef
+    Creates BLAST Database from UTM reference or Griffiths reference (chromosomes only).
 merge_repeat_databases
     Merge de novo repeat library with Green Plant (i.e., Viridiplantae) repeat library from RepBase
 merge_rnaseq_bams
@@ -75,7 +124,11 @@ minimap_hap_vs_TrRvFive
 minimap_hap_vs_hap_paf
     Maps each haplotype against the other using Minimap. This is done for the raw original haplotypes, and the revised haplotypes following manual fixes. 
 
-    The alignments for the raw haplotypes were used for QC, identifying misallignments, and identifying scaffolds to fill gaps in the original haplotypes. Used to generate dotplots in figure S1.
+    The alignments for the raw haplotypes were used for QC, identifying misallignments, and identifying scaffolds to fill gaps in the original haplotypes.
+minimap_hapsCombined_paf
+    Maps Hap1 against Hap2, rather than pairwise. This is done for the raw original haplotypes, and the revised haplotypes following manual fixes. 
+
+    The alignments for the raw haplotypes were used for QC, identifying misallignments, and identifying scaffolds to fill gaps in the original haplotypes. Used to generate dotplots.
 prefetch
     Pre-fetch RNAseq libraries that will be used for structural gene annotation
 qc_done
@@ -84,9 +137,7 @@ quast_diploid_ref
 quast_haploid_ref
     Use QUAST to QC the haploid reference assembly
 reference_assemblies_done
-reformat_gff
-    Fix transcript IDs for genes with alternative mRNA isoforms and remove transcript_id from gene features
-remove_features_and_organelles
+removeOrganelles_keepCDSonly
     Remove organellar annotations and all features exect CDS. Required since BRAKER-generated GTFs are not compatible with most downstream software out-of-the box
 rename_tsebra_gtf
     Rename genes in combined TSEBRA GTF
@@ -94,12 +145,15 @@ repeat_masker
     Softmask repeats in the white clover haploid mapping reference assembly.
 repeat_modeler
     Build de novo repeat library from haploid mapping reference assembly using RepeatModeler
-run_busco
+run_busco_genome
+run_busco_protein
     Assess annotation completeness by running BUSCO against both the embryophyta and Fabales databases.
 run_eggnog_mapper
     Generate functional annotations using Eggnog-mapper
 run_interproscan
     Generate functional annotations using InterProScan
+sort_structuralGFF
+    Sort GFF3 using genome tools
 split_chromosomal_fasta
     Get separate FASTA for each chromosome
 split_fasta_toChroms_andOrganelles
@@ -108,5 +162,11 @@ tableToAsn_haploid
     Run table2asn in parallel across chromosomes to generate NCBI Sequin (i.e., .sqn) files for upload to submission portal
 tsebra_combine
     Combine evidence from BRAKER Rnaseq and BRAKER protein using TSEBRA
+utm_TrRFive_genMap_circos
+    Figure 1 and S3: Generate Circos plot with Linkage Markers aligned to both references, 
+    with lines colored based on whether they align to the correct LG. Done for DG and SG populations
+utm_circos
+    Figure 2: Generate Circos plot of UTM haploid mapping reference with GC%. gene density, and repeat density tracks. Used as template.
+    Picture in center added afterwards in Inkscape.
 viridiplantae_orthodb
     Download Green Plant (i.e., Viridiplantae) OrthoDB
