@@ -19,7 +19,7 @@ and ends with the generation of the phased diploid assembly in FASTA format
 assembly in FASTA, NCBI Sequin, and GFF3 formats (BioProject PRJNA951196), and
 manuscript figures.
 
-Graphical depiction of pipeline can be found [here](./workflow/rulegraph.pd)
+Graphical depiction of pipeline can be found [here](./workflow/rulegraph.pdf).
 Docstrings for each `Snakemake` rule can be found [here](./docstrings.txt)
 
 In addition to the raw dovetail haplotype FASTAs, the following
