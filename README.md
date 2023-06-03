@@ -15,8 +15,10 @@ chromosome-level, haplotype-resolved assembly of white clover (*Trifolium
 repens*). The pipeline begins with input of the Dovetail haplotype assemblies,
 associated AGP (i.e., “A Golden Path”) files (LINK), and linkage map data, 
 and ends with the generation of the phased diploid assembly in FASTA format
-(NCBI BioProjects PRJNA957817 and PRJNA957816), the annotated haploid mapping
-assembly in FASTA, NCBI Sequin, and GFF3 formats (BioProject PRJNA951196), and
+(NCBI BioProjects [PRJNA957817](https://www.ncbi.nlm.nih.gov/bioproject/PRJNA957817) 
+and [PRJNA957816](https://www.ncbi.nlm.nih.gov/bioproject/?term=PRJNA957816)), 
+the annotated haploid mapping assembly in FASTA, NCBI Sequin, and GFF3 formats
+(BioProject [PRJNA951196](https://www.ncbi.nlm.nih.gov/bioproject/?term=PRJNA951196)), and
 manuscript figures.
 
 Graphical depiction of pipeline can be found [here](./workflow/rulegraph.pdf).
