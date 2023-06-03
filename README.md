@@ -22,7 +22,7 @@ the annotated haploid mapping assembly in FASTA, NCBI Sequin, and GFF3 formats
 manuscript figures.
 
 Graphical depiction of pipeline can be found [here](./workflow/rulegraph.pdf).
-Docstrings for each `Snakemake` rule can be found [here](./docstrings.txt)
+Docstrings for each `Snakemake` rule can be found [here](./workflow/docstrings.txt)
 
 In addition to the raw dovetail haplotype FASTAs, the following
 dependencies/resources need to be obtained prior to running the pipeline.
