@@ -91,6 +91,7 @@ rule merge_repeat_databases:
 rule repeat_masker:
     """
     Softmask repeats in the white clover haploid mapping reference assembly.
+    Output table used to generate Table S2
     """
     input:
         lib = rules.merge_repeat_databases.output,

@@ -78,6 +78,7 @@ funannotate_setup
     Download Databases for Funannotate
 functional_stats
     Use AGAT to generate summary statistics of functional annotation
+    Output partly used for Table 1
 generate_circos_genMap_links
     Create Circos-formatted link and highlight files for linkage markers and thei physical positions in both reference genomes
 genes_repeats_overlap
@@ -126,16 +127,19 @@ minimap_hap_vs_hap_paf
 
     The alignments for the raw haplotypes were used for QC, identifying misallignments, and identifying scaffolds to fill gaps in the original haplotypes.
 minimap_hapsCombined_paf
-    Maps Hap1 against Hap2, rather than pairwise. This is done for the raw original haplotypes, and the revised haplotypes following manual fixes. 
+    Maps Hap1 against Hap2, rather than pairwise. This is done for the raw original haplotypes, and the revised haplotypes following manual fixes.
 
-    The alignments for the raw haplotypes were used for QC, identifying misallignments, and identifying scaffolds to fill gaps in the original haplotypes. Used to generate dotplots.
+    The alignments for the raw haplotypes were used for QC, identifying misallignments, and identifying scaffolds to fill gaps in the original haplotypes.
+    Used to generate dotplots for Figure S1.
 prefetch
     Pre-fetch RNAseq libraries that will be used for structural gene annotation
 qc_done
 quast_diploid_ref
     Use QUAST do QC the phased diploid assembly.
+    Output partly used for Table 1
 quast_haploid_ref
     Use QUAST to QC the haploid reference assembly
+    Output partly used for Table 1
 reference_assemblies_done
 removeOrganelles_keepCDSonly
     Remove organellar annotations and all features exect CDS. Required since BRAKER-generated GTFs are not compatible with most downstream software out-of-the box
@@ -143,11 +147,15 @@ rename_tsebra_gtf
     Rename genes in combined TSEBRA GTF
 repeat_masker
     Softmask repeats in the white clover haploid mapping reference assembly.
+    Output table used to generate Table S2
 repeat_modeler
     Build de novo repeat library from haploid mapping reference assembly using RepeatModeler
 run_busco_genome
+    Run BUSCO in genome-mode on haploid mapping reference and diploid haplotypes. Run against
+    embryophyta and fabales lineage datasets. Output partly used for Table 2
 run_busco_protein
     Assess annotation completeness by running BUSCO against both the embryophyta and Fabales databases.
+    Output partly used for Table 2
 run_eggnog_mapper
     Generate functional annotations using Eggnog-mapper
 run_interproscan
@@ -163,7 +171,7 @@ tableToAsn_haploid
 tsebra_combine
     Combine evidence from BRAKER Rnaseq and BRAKER protein using TSEBRA
 utm_TrRFive_genMap_circos
-    Figure 1 and S3: Generate Circos plot with Linkage Markers aligned to both references, 
+    Figure 1 and S2: Generate Circos plot with Linkage Markers aligned to both references, 
     with lines colored based on whether they align to the correct LG. Done for DG and SG populations
 utm_circos
     Figure 2: Generate Circos plot of UTM haploid mapping reference with GC%. gene density, and repeat density tracks. Used as template.

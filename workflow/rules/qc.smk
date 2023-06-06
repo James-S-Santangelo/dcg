@@ -3,6 +3,7 @@
 rule quast_haploid_ref:
     """
     Use QUAST to QC the haploid reference assembly
+    Output partly used for Table 1
     """
     input:
         fasta = rules.repeat_masker.output.fasta,
@@ -26,6 +27,7 @@ rule quast_haploid_ref:
 rule quast_diploid_ref:
     """
     Use QUAST do QC the phased diploid assembly.
+    Output partly used for Table 1
     """
     input:
         rules.create_reference_assemblies.output.dip_hap1,
@@ -48,6 +50,7 @@ rule quast_diploid_ref:
 rule run_busco_protein:
     """
     Assess annotation completeness by running BUSCO against both the embryophyta and Fabales databases.
+    Output partly used for Table 2
     """
     input:
         prot = rules.get_final_proteins.output 
@@ -71,6 +74,10 @@ rule run_busco_protein:
         """
 
 rule run_busco_genome:
+    """
+    Run BUSCO in genome-mode on haploid mapping reference and diploid haplotypes. Run against
+    embryophyta and fabales lineage datasets. Output partly used for Table 2
+    """
     input:
         lambda w: rules.repeat_masker.output.fasta if w.ass == 'hap' else (rules.create_reference_assemblies.output.dip_hap1 if w.ass == 'dip1' else rules.create_reference_assemblies.output.dip_hap2)
     output:
@@ -95,6 +102,7 @@ rule run_busco_genome:
 rule functional_stats:
     """
     Use AGAT to generate summary statistics of functional annotation
+    Output partly used for Table 1
     """
     input:
         gff = rules.gff_sort_functional.output,

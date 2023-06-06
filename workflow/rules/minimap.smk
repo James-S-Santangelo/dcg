@@ -57,9 +57,10 @@ rule combine_haps:
 
 rule minimap_hapsCombined_paf:
     """
-    Maps Hap1 against Hap2, rather than pairwise. This is done for the raw original haplotypes, and the revised haplotypes following manual fixes. 
+    Maps Hap1 against Hap2, rather than pairwise. This is done for the raw original haplotypes, and the revised haplotypes following manual fixes.
 
-    The alignments for the raw haplotypes were used for QC, identifying misallignments, and identifying scaffolds to fill gaps in the original haplotypes. Used to generate dotplots. 
+    The alignments for the raw haplotypes were used for QC, identifying misallignments, and identifying scaffolds to fill gaps in the original haplotypes.
+    Used to generate dotplots for Figure S1.
     """
     input:
         hap1 = rules.combine_haps.output.hap1,
