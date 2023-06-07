@@ -1,20 +1,21 @@
 ## Dovetail Clover Genome (DCG)
 
 - TODO: Link manuscript/preprint when available
-- TODO: Link to Haplotype Fasta and AGP files
 
 ### Manuscript: Chromosome-level, haplotype-resolved assembly of white clover (*Trifolium repens*)
 #### Authors: James S. Santangelo, Paul Battlay, Brandon Hendrickson, Wen-Hsi Kuo, Kenneth M. Olsen, Nicholas J. Kooyers, Johnson, M.T. Johnson, Kathryn A. Hodgins, Rob W. Ness
 
-
+This manuscript is currently pre-printed on [BioRxiv]() <br>
+NCBI assemblies and annotation in BioProjects below are currently in the final stages of processing.
+In the meantime, NCBI-approved files can be downloaded from [here](https://ln5.sync.com/dl/8e77002b0/4gf5uc95-dev78c5d-mhf3ym2b-k43nd5kk)
 
 ### Description
 
 This repository contains the code used for the assembly and annotation of a
 chromosome-level, haplotype-resolved assembly of white clover (*Trifolium
 repens*). The pipeline begins with input of the Dovetail haplotype assemblies,
-associated AGP (i.e., “A Golden Path”) files (LINK), and linkage map data, 
-and ends with the generation of the phased diploid assembly in FASTA format
+associated AGP (i.e., “A Golden Path”) files ([Download here](https://ln5.sync.com/dl/6ee8890b0/8w4b8qd7-qudim5qa-6z8ahhck-uvrui776)), 
+and linkage map data, and ends with the generation of the phased diploid assembly in FASTA format
 (NCBI BioProjects [PRJNA957817](https://www.ncbi.nlm.nih.gov/bioproject/PRJNA957817) 
 and [PRJNA957816](https://www.ncbi.nlm.nih.gov/bioproject/?term=PRJNA957816)), 
 the annotated haploid mapping assembly in FASTA, NCBI Sequin, and GFF3 formats
