@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8180529.svg)](https://doi.org/10.5281/zenodo.8180529)
+
 ## Dovetail Clover Genome (DCG)
 
 ### Manuscript: Chromosome-level, haplotype-resolved assembly of white clover (*Trifolium repens*)
