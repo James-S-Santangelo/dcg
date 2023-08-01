@@ -677,6 +677,22 @@ rule fixEC_incrementCDS_addLocusTags:
     script:
         "../scripts/python/fixEC_incrementCDS_addLocusTags.py"
 
+rule split_protein_fasta:
+    """
+    Split protein FASTA file into files with 1000 sequences for BLAST searches
+    """
+    input:
+        rules.get_proteins.output
+    output:
+        temp(expand(f"{ANNOTATION_DIR}/blast_func/protein_split/myseq{{num}}.fa", num=[x for x in range(0, 88834)]))
+    params:
+        outdir = f"{ANNOTATION_DIR}/blast_func/protein_split/"
+    shell:
+        """
+        awk 'BEGIN {{n_seq=0;}} /^>/ {{if(n_seq%1==0){{file=sprintf("myseq%d.fa",n_seq);}} print >> file; n_seq++; next;}} {{ print >> file; }}' < {input}
+        mv *.fa {params.outdir}
+        """
+
 rule fixProducts_ncbiErrors:
     """
     Fix product annotations and reassign attributes based on NCBI input GFF3 requirements
@@ -792,10 +808,80 @@ rule get_final_proteins:
         gffread -E -y {output} -g {input.ref} {input.gff} 2> {log}
         """
 
+##################################
+#### DIAMOND PROTEIN PRODUCTS ####
+##################################
+
+rule download_nr_blast_db:
+    output:
+        multiext(f"{ANNOTATION_DIR}/blast_func/nr/nr.", "pal", "pdb", "pos", "pot", "ptf", "pto")
+    conda: '../envs/blast.yaml'
+    params:
+        outdir = f"{ANNOTATION_DIR}/blast_func/nr"
+    shell:
+        """
+        mkdir -p {params.outdir}
+        update_blastdb.pl --deconpress nr && mv nr* tax* {params.outdir}
+        """
+
+rule get_taxids:
+    """
+    Create file with Species-level taxids for all green plants
+    """
+    output:
+        f"{ANNOTATION_DIR}/blast_func/taxids.txt"
+    conda: '../envs/blast.yaml'
+    shell:
+        """
+        get_species_taxids.sh -t 33090 > {output} 
+        """
+
+rule diamond_prepdb:
+    input:
+        flag = rules.download_nr_blast_db.output
+    output:
+        f'{ANNOTATION_DIR}/blast_func/diamond_prepdb.done'
+    log: f'{LOG_DIR}/diamond/diamond_prepdb.log'
+    threads: 12
+    params:
+        db = f"{ANNOTATION_DIR}/blast_func/nr/nr"
+    shell:
+        """
+        wget https://github.com/bbuchfink/diamond/releases/download/v2.1.8/diamond-linux64.tar.gz
+        tar -xvzf diamond-linux64.tar.gz
+        ./diamond prepdb --threads {threads} --verbose --db {params.db} 2> {log} &&
+        touch {output}
+        """
+
+rule diamond_blastp:
+    input:
+        flag = rules.diamond_prepdb.output,
+        prot = rules.get_final_proteins.output
+    output:
+        f'{ANNOTATION_DIR}/blast_func/diamond_out.txt'
+    log: f'{LOG_DIR}/diamond/diamond_blastp.log'
+    conda: '../envs/annotation.yaml'
+    threads: 12
+    params:
+        db = f"{ANNOTATION_DIR}/blast_func/nr/nr"
+    shell:
+        """
+        ./diamond blastp --threads {threads}  --verbose \
+            --db {params.db} --out {output} --header simple \
+            --max-target-seqs 5 --query {input.prot} \
+            --max-hsps 1 \
+            --outfmt 6 qseqid qlen sseqid slen stitle pident evalue 2> {log}
+        """
+
+##############
+#### POST ####
+##############
+
 rule annotation_done:
     input:
         expand(rules.tableToAsn_haploid.output, chrom=CHROMOSOMES),
-        rules.get_final_proteins.output
+        rules.get_final_proteins.output,
+        rules.diamond_blastp.output
     output:
         f"{ANNOTATION_DIR}/annotation.done"
     shell:

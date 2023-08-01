@@ -30,3 +30,8 @@ def get_create_subgenome_fasta_input(wildcards):
     all_fasta = expand(rules.split_chromosomal_fasta.output, chrom=CHROMOSOMES)
     sg_fastas = [fa for fa in all_fasta if wildcards.sg in os.path.basename(fa)]
     return sg_fastas
+
+
+def get_blastp_input(wildcards):
+    fasta = [x for x in rules.split_protein_fasta.output if os.path.basename(x) == f'myseq{wildcards.num}.fa']
+    return fasta
