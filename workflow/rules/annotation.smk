@@ -726,70 +726,12 @@ rule gff_sort_functional:
     input:
         rules.fix_overlappingGenes_remapIDs.output.gff
     output:
-        f"{ANNOTATION_DIR}/{ASSEMBLY_NAME}_functional_final_sorted.gff3"
+        f"{ANNOTATION_DIR}/cleaned/{ASSEMBLY_NAME}_functional_sorted.gff3"
     log: LOG_DIR + '/gff_sort/gff_sort_functional.log'
     conda: '../envs/annotation.yaml'
     shell:
         """
         gff3_sort -g {input} -r -og {output} 2> {log}
-        """
-
-rule split_chromosomal_fasta:
-    """
-    Get separate FASTA for each chromosome
-    """
-    input:
-        rules.split_fasta_toChroms_andOrganelles.output.chroms
-    output:
-        f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/split/{{chrom}}.fasta"
-    conda: '../envs/annotation.yaml' 
-    shell:
-        """
-        samtools faidx {input} {wildcards.chrom} > {output}
-        """
-
-rule download_tableToAsn:
-    """
-    Download NCBI's table2asn program
-    """
-    output:
-        'table2asn'
-    params:
-        url = 'https://ftp.ncbi.nlm.nih.gov/asn1-converters/by_program/table2asn/linux64.table2asn.gz'
-    shell:
-        """
-        wget {params.url}
-        gunzip linux64.table2asn.gz
-        mv linux64.table2asn table2asn
-        chmod +x table2asn
-        """
-
-rule tableToAsn_haploid:
-    """
-    Run table2asn in parallel across chromosomes to generate NCBI Sequin (i.e., .sqn) files for upload to submission portal
-    """
-    input:
-        gff = rules.gff_sort_functional.output,
-        sbt = NCBI_TEMPLATE,
-        ref = rules.split_chromosomal_fasta.output,
-        tbl_asn = rules.download_tableToAsn.output
-    output:
-        ncbi_out = directory(f"{NCBI_DIR}/haploid/{{chrom}}/{{chrom}}_table2asn")
-    log: f"{LOG_DIR}/tableToAsn/{{chrom}}_tableToAsn_haploid.log"
-    conda: '../envs/annotation.yaml'
-    shell:
-        """
-        ./table2asn -i {input.ref} \
-            -f {input.gff} \
-            -t {input.sbt} \
-            -outdir {output} \
-            -M n -Z -J -c w \
-            -V v \
-            -gaps-min 10 \
-            -l proximity-ligation \
-            -gaps-unknown 100 \
-            -j "[organism=Trifolium repens]" \
-            -logfile {log} 2> {log}
         """
 
 rule get_final_proteins:
@@ -822,18 +764,6 @@ rule download_nr_blast_db:
         """
         mkdir -p {params.outdir}
         update_blastdb.pl --deconpress nr && mv nr* tax* {params.outdir}
-        """
-
-rule get_taxids:
-    """
-    Create file with Species-level taxids for all green plants
-    """
-    output:
-        f"{ANNOTATION_DIR}/blast_func/taxids.txt"
-    conda: '../envs/blast.yaml'
-    shell:
-        """
-        get_species_taxids.sh -t 33090 > {output} 
         """
 
 rule diamond_prepdb:
@@ -873,6 +803,88 @@ rule diamond_blastp:
             --outfmt 6 qseqid qlen sseqid slen stitle pident evalue 2> {log}
         """
 
+rule filter_diamond_hits:
+    input:
+        hits = rules.diamond_blastp.output
+    output:
+        out = f'{ANNOTATION_DIR}/blast_func/diamond_hits_filtered.txt'
+    conda: '../envs/notebooks.yaml'
+    script:
+        "../scripts/r/filter_diamond_hits.R"
+
+rule add_diamond_hits_products:
+    input:
+        hits = rules.filter_diamond_hits.output,
+        gff = rules.gff_sort_functional.output
+    output:
+        db = f"{PROGRAM_RESOURCE_DIR}/gffutils/{ASSEMBLY_NAME}_diamondHits.gffdb", 
+        gff = f'{ANNOTATION_DIR}/{ASSEMBLY_NAME}_functional_withDiamondProducts_final_sorted.gff3'
+    conda: '../envs/annotation.yaml'
+    script:
+        "../scripts/python/add_diamond_hits_products.py"
+
+##############
+#### NCBI ####
+##############
+
+rule split_chromosomal_fasta:
+    """
+    Get separate FASTA for each chromosome
+    """
+    input:
+        rules.split_fasta_toChroms_andOrganelles.output.chroms
+    output:
+        f"{REFERENCE_ASSEMBLIES_DIR}/haploid_reference/split/{{chrom}}.fasta"
+    conda: '../envs/annotation.yaml' 
+    shell:
+        """
+        samtools faidx {input} {wildcards.chrom} > {output}
+        """
+
+rule download_tableToAsn:
+    """
+    Download NCBI's table2asn program
+    """
+    output:
+        'table2asn'
+    params:
+        url = 'https://ftp.ncbi.nlm.nih.gov/asn1-converters/by_program/table2asn/linux64.table2asn.gz'
+    shell:
+        """
+        wget {params.url}
+        gunzip linux64.table2asn.gz
+        mv linux64.table2asn table2asn
+        chmod +x table2asn
+        """
+
+rule tableToAsn_haploid:
+    """
+    Run table2asn in parallel across chromosomes to generate NCBI Sequin (i.e., .sqn) files for upload to submission portal
+    """
+    input:
+        gff = rules.add_diamond_hits_products.output.gff,
+        sbt = NCBI_TEMPLATE,
+        ref = rules.split_chromosomal_fasta.output,
+        tbl_asn = rules.download_tableToAsn.output
+    output:
+        ncbi_out = directory(f"{NCBI_DIR}/haploid/{{chrom}}/{{chrom}}_table2asn")
+    log: f"{LOG_DIR}/tableToAsn/{{chrom}}_tableToAsn_haploid.log"
+    shell:
+        """
+        ./table2asn -i {input.ref} \
+            -f {input.gff} \
+            -t {input.sbt} \
+            -outdir {output} \
+            -M n -Z -J -c w \
+            -V v \
+            -gaps-min 10 \
+            -l proximity-ligation \
+            -gaps-unknown 100 \
+            -j "[organism=Trifolium repens]" \
+            -logfile {log} 2> {log}
+        """
+
+
 ##############
 #### POST ####
 ##############
@@ -880,8 +892,7 @@ rule diamond_blastp:
 rule annotation_done:
     input:
         expand(rules.tableToAsn_haploid.output, chrom=CHROMOSOMES),
-        rules.get_final_proteins.output,
-        rules.diamond_blastp.output
+        rules.get_final_proteins.output
     output:
         f"{ANNOTATION_DIR}/annotation.done"
     shell:
