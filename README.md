@@ -1,13 +1,12 @@
-## Dovetail Clover Genome (DCG)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.8180534.svg)](https://doi.org/10.5281/zenodo.8180534)
 
-- TODO: Link manuscript/preprint when available
+## Dovetail Clover Genome (DCG)
 
 ### Manuscript: Chromosome-level, haplotype-resolved assembly of white clover (*Trifolium repens*)
 #### Authors: James S. Santangelo, Paul Battlay, Brandon Hendrickson, Wen-Hsi Kuo, Kenneth M. Olsen, Nicholas J. Kooyers, Johnson, M.T. Johnson, Kathryn A. Hodgins, Rob W. Ness
 
-This manuscript is currently pre-printed on [BioRxiv]() <br>
-NCBI assemblies and annotation in BioProjects below are currently in the final stages of processing.
-In the meantime, NCBI-approved files can be downloaded from [here](https://ln5.sync.com/dl/8e77002b0/4gf5uc95-dev78c5d-mhf3ym2b-k43nd5kk)
+This manuscript has been accepted for publication in *Genome Biology and Evolution* <br>
+An up-to-date preprint can be found on [BioRxiv](https://www.biorxiv.org/content/10.1101/2023.06.06.543960v2)
 
 ### Description
 
